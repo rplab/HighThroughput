@@ -11,8 +11,7 @@
 %        Delete button checks if inputs to further functions rely on its
 %          outputs
 %
-% Current work: Make procedure reordering buttons, edit, save default, 
-%                 save, load, etc.
+% Current work: Make procedure reordering button, editsave default, save, load
 %               Outputs at position i in procedure window can be used as
 %                 inputs at positions i+1...N.
 %
@@ -22,7 +21,7 @@ function htGui(settings)
 
 %% Create instances using the instrument names and classes in settings
 % If htGui is naively invoked, just autopopulate settings
-if(nargin ~= 1)
+if(nargin == 0)
     settings.positionGUI = [0, 95, 1280, 665];
     settings.useInstruments = [true, true, true, true, true];
     settings.instrumentNames =       {'DAQ: National Instruments 6343', 'Stage/Filter: ASI Tiger Console', 'Pump: KD Scientific Legato 111', 'Camera: Hamamatsu Orca Flash 4.0', 'AOTF: Optoelectronics AOTF'};

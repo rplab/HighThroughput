@@ -10,7 +10,6 @@
 %          MD files for each directory
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Why
 classdef htForm
     properties
         warningsVerbose = false; % Boolean which permits printing minor warnings if true; Default false
