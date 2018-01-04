@@ -86,13 +86,19 @@ classdef htRunProcedure < htForm
             instrumentInstancesCellArray{1, 1} = instrumentInstancesCellArray{1, 1}.ToggleDigitalOutputChannelStates(niDaqSession, {'Valve1'});
         end
         
+        function obj = DebugDisplayString(obj, str2Disp)
+            disp(str2Disp);
+        end
+        
         function [obj, numSum, numDifference, numProduct] = DebugDisplayMathOperations(obj, infoWindow, num1, num2)
             numSum = num1 + num2;
             numDifference = num1 - num2;
             numProduct = num1*num2;
+            disp(numSum);
+            disp(numDifference);
+            disp(numProduct);
             htForm.PrintStringToWindow(infoWindow, strcat({'Sum is: '}, num2str(numSum)))
-            htForm.PrintStringToWindow(infoWindow, strcat({'Difference is: '}, num2str(numDifference)))
-            htForm.PrintStringToWindow(infoWindow, strcat({'Product is: '}, num2str(numProduct)))
+            htForm.PrintStringToWindow(infoWindow, strcat({'Product is: '}, num2str(res2)))
         end
         
     end
@@ -104,6 +110,15 @@ classdef htRunProcedure < htForm
             res2 = num1*num2;
             htForm.PrintStringToWindow(infoWindow, strcat({'Sum is: '}, num2str(res1)))
             htForm.PrintStringToWindow(infoWindow, strcat({'Product is: '}, num2str(res2)))
+        end
+        
+        function Pause(infoWindow, pauseTimeMilliseconds)
+            pause(pauseTimeMilliseconds/1000);
+            htForm.PrintStringToWindow(infoWindow, strcat({'Pausing for '}, num2str(pauseTimeMilliseconds), {' milliseconds'}));
+        end
+        
+        function PrintTimestamp(infoWindow)
+            htForm.PrintStringToWindow(infoWindow, datestr(datetime));
         end
         
 %         function RUN_SCRIPT(scriptStr)

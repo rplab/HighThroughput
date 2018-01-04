@@ -16,7 +16,20 @@ classdef htForm
         sequenceVerbose = true; % Boolean which permits printing to screen information regarding which step is currently performing; Default true
         uniqueNameString; % A string which identifies which class to instantiate from. Used during the automated for loop in the connectInstruments procedure.
     end
-    methods
+    methods(Static)
         
+        function PrintStringToWindow(infoWindow, stringToPrintToWindow)
+            lastIndex = size(get(infoWindow, 'String')', 2) + 1;
+            set(infoWindow, 'String', [get(infoWindow, 'String')', stringToPrintToWindow], 'Value', lastIndex);
+        end
+        
+        function Pause(infoWindow, pauseTimeMilliseconds)
+            pause(pauseTimeMilliseconds/1000);
+            htForm.PrintStringToWindow(infoWindow, strcat({'Pausing for '}, num2str(pauseTimeMilliseconds), {' milliseconds'}));
+        end
+        
+        function PrintTimestampToWindow(infoWindow)
+            htForm.PrintStringToWindow(infoWindow, datestr(datetime));
+        end
     end
 end

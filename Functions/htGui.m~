@@ -4,26 +4,33 @@
 % A function
 %
 % Ideas: Can you make a listbox only do something on double-click?
+%        As instructions are executed, can you highlight the procedure
+%          they're currently at?
 %
-% To do: Pause button (allow functions to accept handle as an input?)
+% To do: Remove ability to add procedures while program is running
 %        SUPER USEFUL: Checkbox on procedure-to-add that let's you evaluate
 %          the string you write as a literal
 %        Delete button checks if inputs to further functions rely on its
 %          outputs
+%        Make procedure reordering buttons, edit, save default, 
+%          save, load, etc., work.
+%        Outputs at position i in procedure window can be used as
+%          inputs at positions i+1...N.
 %
-% Current work: Make procedure reordering button, editsave default, save, load
-%               Outputs at position i in procedure window can be used as
-%                 inputs at positions i+1...N.
+% Current work: dump text to file, clear screen
 %
+% Completed: Pause button, save as, save defaults, load procedures buttons,
+%              new window to print info to, functions updated to use it
+% 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function htGui(settings)
 
 %% Create instances using the instrument names and classes in settings
 % If htGui is naively invoked, just autopopulate settings
-if(nargin == 0)
+if(nargin ~= 1)
     settings.positionGUI = [0, 95, 1280, 665];
-    settings.useInstruments = [true, true, true, true, true];
+    settings.useInstruments = [false, false, false, false, false];
     settings.instrumentNames =       {'DAQ: National Instruments 6343', 'Stage/Filter: ASI Tiger Console', 'Pump: KD Scientific Legato 111', 'Camera: Hamamatsu Orca Flash 4.0', 'AOTF: Optoelectronics AOTF'};
     settings.instrumentClasses =     {'htDaq',                          'htASITigerConsole',               'htKDSPump',                      'htHamamatsu',                      'htAOTF'};
     settings.instrumentConnections = {'HTDev1',                         'Com5',                            'Com25',                          'hamamatsu',                        'Com19'};
@@ -53,6 +60,9 @@ if(instrumentInstancesCellArray{2}.userWantsToConnect)
     asiSerialObj = instrumentSessionsCellArray{1, 2};
 end
 
+% Initialize any variables you want access to here (even if defined below, use [])
+infoWindow = []; %#ok since set later, used as a dummy now for curVariables
+
 %% Variables to see in the "Add Procedure" panel (i.e. after clicking the arrow) should be defined prior to this
 % Initialize variables to provide procedures
 obj = 'obj'; %#ok since this is a dummy variable to help automate the autofilling processes of the add procedure buttons
@@ -73,10 +83,13 @@ toAddStartButtonControl = [];
 
 % Initialize GUI variables
 stopBool = false;
+pauseBool = false;
 positionGUI = settings.positionGUI;
 widthGUI = positionGUI(3);
 heightGUI = positionGUI(4);
 colorGUIBackground = [0.9444, 0.9444, 0.9444];
+% colorWindowEdge = [0.75, 0.75, 0.75];
+% windowEdgeThickness = 0.75;
 mainPanelInsetDistanceX = 1;
 mainPanelInsetDistanceY = 3;
 textSpacingBufferDX = 10;
@@ -106,8 +119,8 @@ startButtonBGColor = [0.3, 0.6, 1];
 startButtonFontColor = [0.95, 0.95, 0.95];
 saveDefaultButtonBGColor = [0.4, 0.4, 0.4];
 saveDefaultButtonFontColor = [0.95, 0.95, 0.95];
-% closeButtonBGColor = [0.7, 0.2, 0.2];
-% closeButtonFontColor = [0.95, 0.95, 0.95];
+stopButtonBGColor = [0.7, 0.2, 0.2];
+stopButtonFontColor = [0.95, 0.95, 0.95];
 closeButtonBGColor = saveDefaultButtonBGColor;
 closeButtonFontColor = saveDefaultButtonFontColor;
 toAddMethodNumSelected = 1;
@@ -115,14 +128,19 @@ toRunMethodNumSelected = 1;
 metaClassNumSelected = 1;
 toRunProceduresWidth = 300;
 toAddProceduresWidth = 200;
-proceduresEndHeight = 50;
-proceduresLoopHeight = 150;
-proceduresStartHeight = 50;
+proceduresEndHeight = 75;
+proceduresLoopHeight = 175;
+proceduresStartHeight = 75;
 procedureToRunDeltaXFromRightSide = 3*pushButtonWidth/4;
 toRunProceduresEndPosition = [widthGUI - mainPanelInsetDistanceX - 2*textSpacingBufferDX - toRunProceduresWidth - procedureToRunDeltaXFromRightSide, mainPanelInsetDistanceY + 3*textSpacingBufferDY + pushButtonHeight, toRunProceduresWidth, proceduresEndHeight];
 toRunProceduresLoopPosition = toRunProceduresEndPosition  + [0, textSpacingBufferDY + toRunProceduresEndPosition(4), 0, proceduresLoopHeight - toRunProceduresEndPosition(4)];
 toRunProceduresStartPosition = toRunProceduresLoopPosition + [0, textSpacingBufferDY + toRunProceduresLoopPosition(4), 0, proceduresStartHeight - toRunProceduresLoopPosition(4)];
 toAddProceduresPosition = [toRunProceduresLoopPosition(1) - toAddProceduresWidth - 2*textSpacingBufferDX - addProceduresButtonWidth, toRunProceduresEndPosition(2), toAddProceduresWidth, proceduresEndHeight + proceduresLoopHeight + proceduresStartHeight + 2*textSpacingBufferDY];
+procedureButtonWidths = (toRunProceduresWidth - 2*textSpacingBufferDX)/3;
+procedureButtonHeights = 3*pushButtonHeight/8;
+proceduresSaveAsButtonPosition = [toRunProceduresStartPosition(1), toRunProceduresStartPosition(2) + proceduresEndHeight + textSpacingBufferDY, procedureButtonWidths, procedureButtonHeights];
+proceduresSaveDefaultButtonPosition = [proceduresSaveAsButtonPosition(1) + textSpacingBufferDX + procedureButtonWidths, proceduresSaveAsButtonPosition(2), procedureButtonWidths, procedureButtonHeights];
+proceduresLoadButtonPosition = [proceduresSaveDefaultButtonPosition(1) + textSpacingBufferDX + procedureButtonWidths, proceduresSaveDefaultButtonPosition(2), procedureButtonWidths, procedureButtonHeights];
 metaClassDropDownBoxHeight = 40;
 metaClassChoicePosition = [toAddProceduresPosition(1), toRunProceduresStartPosition(2) + proceduresStartHeight - 14, toAddProceduresWidth, metaClassDropDownBoxHeight];
 addProceduresEndButtonPosition = [toRunProceduresLoopPosition(1) - textSpacingBufferDX - addProceduresButtonWidth, toRunProceduresEndPosition(2), addProceduresButtonWidth, proceduresEndHeight];
@@ -169,11 +187,77 @@ set(gca, 'FontName', htGuiMainFont)
 f.Visible = 'on';
 %undecorateFig(f); % Useful to remove the red x which shouldn't be pressed (as it can destroy handles to instruments being communicated with, leaving them orphaned, sometimes requiring restarts)
 
+% Figure background
 rectangle('Position', [0, 0, widthGUI, heightGUI], 'Curvature', 0, 'FaceColor', colorGUIBackground, 'Parent', a);
 
+% Procedure Window
+procedureWindowPosition = [toAddProceduresPosition(1) - textSpacingBufferDX, textSpacingBufferDY/2, widthGUI - (toAddProceduresPosition(1) - textSpacingBufferDX/2), proceduresStartTextLabelPosition(2) + proceduresStartTextLabelPosition(4) + 2*textSpacingBufferDY + procedureButtonHeights + uiTitleTextHeight];
+%rectangle('Position', procedureWindowPosition, 'Curvature', 0.025, 'FaceColor', colorGUIBackground, 'EdgeColor', colorWindowEdge, 'LineWidth', windowEdgeThickness, 'Parent', a);
+uicontrol('Parent',f,'Style','text',...
+            'String','PROCEDURE WINDOW',...
+            'FontName', htGuiMainFont,...
+            'FontSize', uiTitleFontSize,...
+            'FontWeight', htGuiMainFontWeight,...
+            'backgroundcolor',colorGUIBackground,...
+            'foregroundcolor',uiTitleFontColor,...
+            'HorizontalAlignment', 'Center',...
+            'Position', [procedureWindowPosition(1) + textSpacingBufferDX, procedureWindowPosition(2) + procedureWindowPosition(4) - textSpacingBufferDY - uiTitleTextHeight, procedureWindowPosition(3) - 2*textSpacingBufferDX, uiTitleTextHeight]);
+
 % Create controls
+generateInformationPanel
 generateProcedurePanel;
 generateExperimentButtonsPanel;
+
+    function generateInformationPanel
+        
+        % Information Window
+        infoWindowListboxPosition = procedureWindowPosition + [0, procedureWindowPosition(4) + textSpacingBufferDY, 0, heightGUI - 4*textSpacingBufferDY - 2*procedureWindowPosition(4) - uiTitleTextHeight];
+        infoWindow = uicontrol('Parent', f,...
+            'Style', 'listbox',...
+            'Max', 1,...
+            'String', {datestr(datetime)},...
+            'ListboxTop', 1,...
+            'backgroundcolor', [1, 1, 1],...
+            'foregroundcolor', [0, 0, 0],...
+            'Position', infoWindowListboxPosition);
+        uicontrol('Parent',f,'Style','text',...
+            'String','INFORMATION WINDOW',...
+            'FontName', htGuiMainFont,...
+            'FontSize', uiTitleFontSize,...
+            'FontWeight', htGuiMainFontWeight,...
+            'backgroundcolor',colorGUIBackground,...
+            'foregroundcolor',uiTitleFontColor,...
+            'HorizontalAlignment', 'Center',...
+            'Position', [toAddProceduresPosition(1), infoWindowListboxPosition(2) + infoWindowListboxPosition(4) + textSpacingBufferDY, procedureWindowPosition(3) - 2*textSpacingBufferDX, uiTitleTextHeight]);
+        
+        % Buttons to save and load procedure settings
+        infoWindowSaveButtonPosition = [toAddProceduresPosition(1), infoWindowListboxPosition(2) + infoWindowListboxPosition(4) + 2*textSpacingBufferDY, procedureButtonWidths, procedureButtonHeights];
+        infoWindowClearButtonPosition = infoWindowSaveButtonPosition [widthGUI - textSpacingBufferDX - pushButtonWidth
+        uicontrol('Parent', f, 'Style', 'pushbutton',...
+            'String','Save as...',...
+            'FontSize', buttonFontSize,...
+            'backgroundcolor', closeButtonBGColor,...
+            'foregroundcolor', closeButtonFontColor,...
+            'Position',infoWindowSaveButtonPosition,...
+            'Callback',{@infoWindowSaveAsButton_Callback});
+        uicontrol('Parent', f, 'Style', 'pushbutton',...
+            'String','Save as...',...
+            'FontSize', buttonFontSize,...
+            'backgroundcolor', closeButtonBGColor,...
+            'foregroundcolor', closeButtonFontColor,...
+            'Position',infoWindowClearButtonPosition,...
+            'Callback',{@infoWindowClearButton_Callback});
+        
+        function infoWindowSaveAsButton_Callback(~, ~)
+            
+        end
+        
+        function infoWindowClearButton_Callback(~, ~)
+            set(infoWindow, 'Value', 1);
+            set(infoWindow, 'String', {datestr(datetime)});
+        end
+        
+    end
 
     function generateProcedurePanel
         
@@ -282,7 +366,7 @@ generateExperimentButtonsPanel;
         % Create list modification buttons
         smallButtonRowPositions = [toRunProceduresStartPosition(2), toRunProceduresLoopPosition(2), toRunProceduresEndPosition(2)] + 3;
         smallButtonColumnPositions = proceduresStartTextLabelPosition(1) + [0, smallPushButtonLength + smallPushButtonDeltaX, 2*(smallPushButtonLength + smallPushButtonDeltaX), 3*(smallPushButtonLength + smallPushButtonDeltaX)];
-        smallButtonWidths = smallPushButtonLength + [0, 0, 0, smallPushButtonLength];
+        smallButtonWidths = smallPushButtonLength + [0, 0, 0, 3*smallPushButtonLength/4];
         textStrings = {char(10005), char(8593), char(8595), 'Edit'};
         for i=1:3
             for j=1:4
@@ -314,7 +398,7 @@ generateExperimentButtonsPanel;
             'Position', metaClassChoicePosition,...
             'Callback', {@metaClassChoicePopUp_Callback});
         
-        % Add toAddProcedures to toRunProcedure window
+        % Buttons to add toAddProcedures to toRunProcedure window
         toAddEndButtonControl = uicontrol('Parent', f, 'Style', 'pushbutton',...
             'String','->',...
             'FontSize', buttonFontSize,...
@@ -336,6 +420,29 @@ generateExperimentButtonsPanel;
             'foregroundcolor', closeButtonFontColor,...
             'Position',addProceduresStartButtonPosition,...
             'Callback',{@addProceduresStartButton_Callback});
+        
+        % Buttons to save and load procedure settings
+        uicontrol('Parent', f, 'Style', 'pushbutton',...
+            'String','Save as...',...
+            'FontSize', buttonFontSize,...
+            'backgroundcolor', closeButtonBGColor,...
+            'foregroundcolor', closeButtonFontColor,...
+            'Position',proceduresSaveAsButtonPosition,...
+            'Callback',{@proceduresSaveAsButton_Callback});
+        uicontrol('Parent', f, 'Style', 'pushbutton',...
+            'String','Save as Default',...
+            'FontSize', buttonFontSize,...
+            'backgroundcolor', closeButtonBGColor,...
+            'foregroundcolor', closeButtonFontColor,...
+            'Position',proceduresSaveDefaultButtonPosition,...
+            'Callback',{@proceduresSaveDefaultButton_Callback});
+        uicontrol('Parent', f, 'Style', 'pushbutton',...
+            'String','Load...',...
+            'FontSize', buttonFontSize,...
+            'backgroundcolor', closeButtonBGColor,...
+            'foregroundcolor', closeButtonFontColor,...
+            'Position',proceduresLoadButtonPosition,...
+            'Callback',{@proceduresLoadButton_Callback});
         
         function toAddProcedureListBox_Callback(hObject, ~)
             toAddMethodNumSelected = get(hObject,'Value');
@@ -482,24 +589,44 @@ generateExperimentButtonsPanel;
             generateProcedureStructureAndGUI(1, toRunIndex, false);
         end
         
+        function proceduresSaveAsButton_Callback(~, ~)
+            
+        end
+        
+        function proceduresSaveDefaultButton_Callback(~, ~)
+            
+        end
+        
+        function proceduresLoadButton_Callback(~, ~)
+            
+        end
+        
     end
 
     function generateExperimentButtonsPanel
         
+        stopButtonPosition = [toAddProceduresPosition(1), mainPanelInsetDistanceY + textSpacingBufferDY, pushButtonWidth, pushButtonHeight];
+        
         uicontrol('Parent', f, 'Style', 'pushbutton',...
             'String','Stop',...
             'FontSize', buttonFontSize,...
-            'backgroundcolor', closeButtonBGColor,...
-            'foregroundcolor', closeButtonFontColor,...
-            'Position',[widthGUI - 3*textSpacingBufferDX - mainPanelInsetDistanceX - 3*pushButtonWidth, mainPanelInsetDistanceY + textSpacingBufferDY, pushButtonWidth, pushButtonHeight],...
+            'backgroundcolor', stopButtonBGColor,...
+            'foregroundcolor', stopButtonFontColor,...
+            'Position',stopButtonPosition,...
             'Callback',{@stop_Callback});
+        
+        uicontrol('Parent', f, 'Style', 'togglebutton',...
+            'String','Pause',...
+            'FontSize', buttonFontSize,...
+            'Position',stopButtonPosition + [textSpacingBufferDX + pushButtonWidth, 0, 0, 0],...
+            'Callback',{@pause_Callback});
         
         uicontrol('Parent', f, 'Style', 'pushbutton',...
             'String','Run',...
             'FontSize', buttonFontSize,...
             'backgroundcolor', startButtonBGColor,...
             'foregroundcolor', startButtonFontColor,...
-            'Position',[widthGUI - 2*textSpacingBufferDX - mainPanelInsetDistanceX - 2*pushButtonWidth, mainPanelInsetDistanceY + textSpacingBufferDY, pushButtonWidth, pushButtonHeight],...
+            'Position',stopButtonPosition + 2*[textSpacingBufferDX + pushButtonWidth, 0, 0, 0],...
             'Callback',{@run_Callback});
         
         uicontrol('Parent', f, 'Style', 'pushbutton',...
@@ -507,7 +634,7 @@ generateExperimentButtonsPanel;
             'FontSize', buttonFontSize,...
             'backgroundcolor', closeButtonBGColor,...
             'foregroundcolor', closeButtonFontColor,...
-            'Position',[widthGUI - textSpacingBufferDX - mainPanelInsetDistanceX - pushButtonWidth, mainPanelInsetDistanceY + textSpacingBufferDY, pushButtonWidth, pushButtonHeight],...
+            'Position',stopButtonPosition + [widthGUI - textSpacingBufferDX - pushButtonWidth - stopButtonPosition(1), 0, 0, 0],...
             'Callback',{@close_Callback});
         
         function run_Callback(~, ~)
@@ -527,6 +654,9 @@ generateExperimentButtonsPanel;
                 end
                 if(settings.defaultFrontPanelSettings.finiteLoop)
                     i = i + 1;
+                end
+                while(pauseBool)
+                    pause(1);
                 end
             end
             
@@ -601,6 +731,7 @@ generateExperimentButtonsPanel;
                 
                 % Eval the string like a function call, assigning all
                 % outputs to a temporary variable "outputs"
+                outputs = [];
                 if(logical(currentMetaClass.MethodList(currentMethodIndex).Static))
                     if(curNumOutputs == 0)
                         eval(inputString);
@@ -655,6 +786,16 @@ generateExperimentButtonsPanel;
         
         function stop_Callback(~, ~)
             stopBool = true;
+            htForm.PrintStringToWindow(infoWindow, 'STOPPING EXPERIMENT (AFTER CURRENT COMMAND IS DONE EXECUTING)');
+        end
+        
+        function pause_Callback(~, ~)
+            pauseBool = ~pauseBool;
+            if(pauseBool)
+                htForm.PrintStringToWindow(infoWindow, 'PAUSING EXPERIMENT (AFTER CURRENT COMMAND IS DONE EXECUTING)');
+            else
+                htForm.PrintStringToWindow(infoWindow, 'RESUMING EXPERIMENT');
+            end
         end
         
     end
@@ -668,7 +809,13 @@ generateExperimentButtonsPanel;
             numInputs = size(procedureVarsStructure(toRunWindowNum).InputStructure{toRunIndex}, 2);
             numOutputs = size(procedureVarsStructure(toRunWindowNum).OutputStructure{toRunIndex}, 2);
         else
-            curMethod = curMetaClass.MethodList(toAddMethodNumSelected);
+            curMethods = {curMetaClass.MethodList.Name}';
+            curMethodsWhole = curMetaClass.MethodList;
+            curMethodsWhole(strcmp('empty',curMethods), :) = [];
+            curMethodsWhole(strcmp(curMetaClass.Name,curMethods), :) = [];
+            curMethods(strcmp('empty',curMethods), :) = [];
+            curMethods(strcmp(curMetaClass.Name,curMethods), :) = [];
+            curMethod = curMethodsWhole(toAddMethodNumSelected);
             numInputs = size(curMethod.InputNames, 1);
             numOutputs = size(curMethod.OutputNames, 1);
             set(toAddEndButtonControl, 'Enable', 'off');
