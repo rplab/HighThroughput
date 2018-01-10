@@ -22,9 +22,7 @@
 %
 % Current work: 
 %
-% Completed: Fixed bug where some inputs/outputs weren't set correctly.
-%            Fixed a bug where zero outputs on a non-static class would not
-%              evaluate correctly.
+% Completed: testing
 % 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
