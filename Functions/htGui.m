@@ -7,7 +7,8 @@
 %        As instructions are executed, can you highlight the procedure
 %          they're currently at?
 %
-% To do: Remove ability to add procedures while program is running
+% To do: Close button disconnects instruments if user forgets to
+%        Remove ability to add procedures while program is running
 %        SUPER USEFUL: Checkbox on procedure-to-add that let's you evaluate
 %          the string you write as a literal
 %        Delete button checks if inputs to further functions rely on its
@@ -16,12 +17,14 @@
 %          save, load, etc., work.
 %        Outputs at position i in procedure window can be used as
 %          inputs at positions i+1...N.
+%        Outputs of a non-static class which do NOT output an update of
+%          their obj will not work correctly. Fix this.
 %
-% Current work: dump text to file, clear screen
+% Current work: 
 %
-% Completed: Pause button, save as, save defaults, load procedures buttons,
-%              new window to print info to, functions updated to use it.
-%              Buttons
+% Completed: Fixed bug where some inputs/outputs weren't set correctly.
+%            Fixed a bug where zero outputs on a non-static class would not
+%              evaluate correctly.
 % 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -62,11 +65,12 @@ if(instrumentInstancesCellArray{2}.userWantsToConnect)
 end
 
 % Initialize any variables you want access to here (even if defined below, use [])
-infoWindow = []; %#ok since set later, used as a dummy now for curVariables
+infoWindow = [];
 
 %% Variables to see in the "Add Procedure" panel (i.e. after clicking the arrow) should be defined prior to this
 % Initialize variables to provide procedures
 obj = 'obj'; %#ok since this is a dummy variable to help automate the autofilling processes of the add procedure buttons
+currentLoopNumber = 1;
 curVariables = who; % Get a list of all the available variables created above this line
 
 %% Initialize variables
@@ -103,7 +107,7 @@ htGuiMainFontWeight = 'Normal'; % 'Normal', 'Bold'
 htGuiFontColor = [0.2, 0.2, 0.2];
 htGuiConnectionBGColor = [0.5, 0.5, 0.5];
 htGuiConnectionFontColor = [0.95, 0.95, 0.95];
-htGuiFontSize = 16;
+htGuiFontSize = 14;
 guiTitleHeight = 30;
 checkboxLength = 20;
 checkboxYOffset = 8;
@@ -159,7 +163,6 @@ curMetaClass = meta.class.fromName(metaClassNameCellArray{1});
 curMethods = {curMetaClass.MethodList.Name}';
 curMethods(strcmp('empty',curMethods), :) = [];
 curMethods(strcmp('htRunProcedure',curMethods), :) = [];
-curNumMethodsToAdd = size(curMethods, 1);
 curMethodsToRunCells = cell(3, 1);
 
 % Add procedure to run list variables;
@@ -461,8 +464,7 @@ generateExperimentButtonsPanel;
             curMethods = {curMetaClass.MethodList.Name}';
             curMethods(strcmp('empty',curMethods), :) = [];
             curMethods(strcmp(curMetaClass.Name,curMethods), :) = [];
-            curNumMethodsToAdd = size(curMethods, 1);
-            set(toAddProceduresListbox, 'Max', curNumMethodsToAdd, 'String', curMethods);
+            set(toAddProceduresListbox, 'Value', 1, 'String', curMethods);
         end
         
         function finiteLoopCheckbox_Callback(hObject, ~)
@@ -651,6 +653,7 @@ generateExperimentButtonsPanel;
             % Loop through the LOOP section of the procedure windows
             i = 0;
             while(~stopBool && i < settings.defaultFrontPanelSettings.finiteLoopNum)
+                currentLoopNumber = i; %#ok this just so user has access to loop number
                 numProceduresToLoop = size(procedureVarsStructure(2).Class, 2);
                 for j=1:numProceduresToLoop
                     ExecuteCurrentProcedure(2, j);
@@ -743,7 +746,9 @@ generateExperimentButtonsPanel;
                         [outputs{:}] = eval(inputString);
                     end
                 else
-                    if(curNumOutputs == 1)
+                    if(curNumOutputs == 0)
+                        eval(inputString);
+                    elseif(curNumOutputs == 1)
                         if(strcmp(currentClassName, 'htRunProcedure'))
                             procedureInstance = eval(inputString);
                         else
@@ -830,7 +835,7 @@ generateExperimentButtonsPanel;
         
         % Define GUI variables
         additionalSectionSpacing = 15;
-        subGUIWidth = 1000;
+        subGUIWidth = 1200;
         subGUIHeight = guiTitleHeight + 2*mainPanelInsetDistanceY + (4 + numInputs + numOutputs)*textSpacingBufferDY + (1 + numInputs + numOutputs)*uiTitleTextHeight + 4*additionalSectionSpacing + pushButtonHeight;
         subGUIPosition = [positionGUI(1) + positionGUI(3)/2 - subGUIWidth/2, positionGUI(2) + positionGUI(4)/2 - subGUIHeight/2, subGUIWidth, subGUIHeight];
         curMethodString = curMethods{toAddMethodNumSelected};
@@ -1049,11 +1054,14 @@ generateExperimentButtonsPanel;
         
         function inputStringPopUp_Callback(hObject, ~, ii)
             curIndex = get(hObject, 'Value');
+            % The first variable name in the list is NONE, so if curIndex
+            % is not 1, add the method name to list, otherwise let the user
+            % define it.
             if(curIndex ~= 1)
                 set(textInputHandles(ii), 'String', curInputVariables{curIndex}, 'Enable', 'off');
                 toAddStructure.InputStructure(ii).isUserDefined = false;
                 toAddStructure.InputStructure(ii).isNumber = false;
-                toAddStructure.InputStructure(ii).varName = curMethod.InputNames{iii};
+                toAddStructure.InputStructure(ii).varName = curInputVariables{curIndex};
             else
                 set(textInputHandles(ii), 'Enable', 'on', 'backgroundcolor', [1, 1, 1], 'foregroundcolor', [1, 1, 1]);
                 set(textInputHandles(ii), 'backgroundcolor', htGuiConnectionBGColor, 'foregroundcolor', htGuiConnectionFontColor);
@@ -1072,7 +1080,7 @@ generateExperimentButtonsPanel;
                 set(textInputHandles(numInputs + ii), 'String', curOutputVariables{curIndex}, 'Enable', 'off');
                 toAddStructure.OutputStructure(ii).isNewVariable = false;
                 toAddStructure.OutputStructure(ii).isUserDefined = false;
-                toAddStructure.OutputStructure(ii).varName = curMethod.OutputNames{iii};
+                toAddStructure.OutputStructure(ii).varName = curOutputVariables{curIndex};
                 toAddStructure.OutputStructure(ii).Value = [];
             else
                 set(textInputHandles(numInputs + ii), 'Enable', 'on', 'backgroundcolor', [1, 1, 1], 'foregroundcolor', [1, 1, 1]);
