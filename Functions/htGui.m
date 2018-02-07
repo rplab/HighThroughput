@@ -5,7 +5,9 @@
 %
 % Ideas: Can you make a listbox only do something on double-click?
 %
-% To do: Close button disconnects instruments if user forgets to
+% To do: If defaults are loaded, adding parameters overwrites the procedure
+%          selected (actually, its the loop section only)
+%        Close button disconnects instruments if user forgets to
 %        Remove ability to add procedures while program is running
 %        Delete button checks if inputs to further functions rely on its
 %          outputs
@@ -17,18 +19,7 @@
 %          their obj will not work correctly. Fix this.
 %
 % Current accomplishments: 
-%       Added a new "Eval" checkbox to inputs, allowing the user to treat
-%          the input like a command to evaluate
-%       Fixed a bug where cancelling a save info window text to file would
-%          result in a harmless but annoying error
-%       Prevented the user from pressing Run multiple times
-%       Pause button is now used to resume, its text updates when pressed,
-%          and it disables the run button when pressed
-%       Fixed a bug where inputs selected from the dropdown weren't being
-%          set correctly
-%       Listbox updates position of current command being executed
-%       User can now save as, load, and set as default various procedures
-%          and configurations
+%       
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function htGui(settings)
