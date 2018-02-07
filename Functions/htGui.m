@@ -5,10 +5,10 @@
 %
 % Ideas: Can you make a listbox only do something on double-click?
 %        As instructions are executed, can you highlight the procedure
-%          they're currently at?
+%          they're currently at? And make sure window can't be used.
+%          (Remove ability to add procedures while program is running)
 %
-% To do: Remove ability to add procedures while program is running
-%        SUPER USEFUL: Checkbox on procedure-to-add that let's you evaluate
+% To do: SUPER USEFUL: Checkbox on procedure-to-add that let's you evaluate
 %          the string you write as a literal
 %        Delete button checks if inputs to further functions rely on its
 %          outputs
@@ -17,11 +17,7 @@
 %        Outputs at position i in procedure window can be used as
 %          inputs at positions i+1...N.
 %
-% Current work: dump text to file, clear screen
-%
-% Completed: Pause button, save as, save defaults, load procedures buttons,
-%              new window to print info to, functions updated to use it.
-%              Buttons
+% Current work:
 % 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -859,6 +855,7 @@ generateExperimentButtonsPanel;
                 end
                 toAddStructure.InputStructure(iii).isUserDefined = curIsUserDefined;
                 toAddStructure.InputStructure(iii).isNumber = false;
+                toAddStructure.InputStructure(iii).evaluate = false;
                 toAddStructure.InputStructure(iii).varName = curMethod.InputNames{iii};
             end
             if(numOutputs == 0)
@@ -1053,6 +1050,7 @@ generateExperimentButtonsPanel;
                 set(textInputHandles(ii), 'String', curInputVariables{curIndex}, 'Enable', 'off');
                 toAddStructure.InputStructure(ii).isUserDefined = false;
                 toAddStructure.InputStructure(ii).isNumber = false;
+                toAddStructure.InputStructure(ii).evaluate = false;
                 toAddStructure.InputStructure(ii).varName = curMethod.InputNames{iii};
             else
                 set(textInputHandles(ii), 'Enable', 'on', 'backgroundcolor', [1, 1, 1], 'foregroundcolor', [1, 1, 1]);
