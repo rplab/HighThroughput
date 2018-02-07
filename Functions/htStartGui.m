@@ -503,8 +503,6 @@ f.Visible = 'on';
             settings.saveDirectoryAndName = strcat(defaultPath, filesep, defaultFileName);
             settings.defaultPath = defaultPath;
             settings.defaultFileName = defaultFileName;
-            settings.defaultFrontPanelSettings.finiteLoop = true;
-            settings.defaultFrontPanelSettings.finiteLoopNum = 10;
             save(strcat(defaultPath, filesep, defaultFileName), 'settings');
         end
     end

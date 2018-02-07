@@ -16,7 +16,7 @@
 %        Outputs of a non-static class which do NOT output an update of
 %          their obj will not work correctly. Fix this.
 %
-% Current accomplishments: 
+% Current work: 
 %       Added a new "Eval" checkbox to inputs, allowing the user to treat
 %          the input like a command to evaluate
 %       Fixed a bug where cancelling a save info window text to file would
@@ -57,7 +57,7 @@ for instantiatingIndex=1:numInstruments
 end
 
 % Connect to instruments REMOVE THIS CODE WHEN OUTPUTS ARE WORKING**************************
-[procedureInstance, instrumentInstancesCellArray, instrumentSessionsCellArray] = procedureInstance.ConnectInstruments(instrumentInstancesCellArray);
+[procedureInstance, instrumentInstancesCellArray, instrumentSessionsCellArray] = procedureInstance.ConnectInstruments(instrumentInstancesCellArray); %#ok since it defines strings later
 if(instrumentInstancesCellArray{1}.userWantsToConnect)
     niDaqSession = instrumentSessionsCellArray{1, 1};
 end
@@ -75,14 +75,21 @@ currentLoopNumber = 1;
 curVariables = who; % Get a list of all the available variables created above this line
 
 %% Initialize variables
+rootDefaultPathName = 'htMostRecentProcedureSettings.mat';
+possibleFile = dir(strcat(settings.defaultPath, filesep, rootDefaultPathName));
+if(~isempty(possibleFile))
+    
+else
+    procedureAndInstrumentSettings.finiteLoop = true;
+    procedureAndInstrumentSettings.finiteLoopNum = 10;
+    save(strcat(settings.defaultPath, filesep, rootDefaultPathName), 'procedureAndInstrumentSettings');
+end
         
 % Initialize procedure/instrument variables
 metaClassMenuChoices = settings.instrumentNames;
 metaClassMenuChoices = ['Procedures', metaClassMenuChoices];
 metaClassNameCellArray = settings.instrumentClasses;
 metaClassNameCellArray = ['htRunProcedure', metaClassNameCellArray];
-procedureAndInstrumentSettings.finiteLoop = true;
-procedureAndInstrumentSettings.finiteLoopNum = 10;
 
 % Initialize handles to a few buttons
 toAddEndButtonControl = [];
@@ -179,8 +186,6 @@ initialEmptyStruct = procedureVarsStructure;
 toRunProceduresEndListbox = [];
 toRunProceduresLoopListbox = [];
 toRunProceduresStartListbox = [];
-finiteLoopCheckboxControl = [];
-loopNumControl = [];
 
 %% Create GUI
 % Create figure
@@ -217,20 +222,6 @@ uicontrol('Parent',f,'Style','text',...
 generateInformationPanel;
 generateProcedurePanel;
 generateExperimentButtonsPanel;
-
-% Populate with initial settings
-% Populate initial settings
-rootDefaultPathName = 'htMostRecentProcedureSettings.mat';
-defaultFilePathAndFile = strcat(settings.defaultPath, filesep, rootDefaultPathName);
-possibleFile = dir(defaultFilePathAndFile);
-if(~isempty(possibleFile))
-    loadData(defaultFilePathAndFile);
-else
-    procedureWindowStartStrings = get(toRunProceduresStartListbox, 'String');
-    procedureWindowLoopStrings = get(toRunProceduresLoopListbox, 'String');
-    procedureWindowEndStrings = get(toRunProceduresEndListbox, 'String');
-    save(defaultFilePathAndFile, 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings');
-end
 
 %% Functions
 
@@ -630,10 +621,7 @@ end
         end
         
         function proceduresSaveDefaultButton_Callback(~, ~)
-            procedureWindowStartStrings = get(toRunProceduresStartListbox, 'String');
-            procedureWindowLoopStrings = get(toRunProceduresLoopListbox, 'String');
-            procedureWindowEndStrings = get(toRunProceduresEndListbox, 'String');
-            save(defaultFilePathAndFile, 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings');
+            
         end
         
         function proceduresLoadButton_Callback(~, ~)
@@ -641,6 +629,27 @@ end
             if(PathToFile ~= 0)
                 loadData(strcat(PathToFile, filesep, FileName));
             end
+        end
+        
+        function loadData(pathAndFileName)
+            varsToLoad = load();
+            set(toRunProceduresStartListbox, 'String', varsToLoad.procedureWindowStartStrings);
+            set(toRunProceduresLoopListbox, 'String', varsToLoad.procedureWindowLoopStrings);
+            set(toRunProceduresEndListbox, 'String', varsToLoad.procedureWindowEndStrings);
+            procedureVarsStructure = varsToLoad.procedureVarsStructure;
+            procedureAndInstrumentSettings = varsToLoad.procedureAndInstrumentSettings;
+            set(finiteLoopCheckboxControl, 'Value', procedureAndInstrumentSettings.finiteLoop);
+            if(procedureAndInstrumentSettings.finiteLoop)
+                set(loopNumControl, 'String', procedureAndInstrumentSettings.finiteLoopNum, 'Enable', 'on');
+                set(toRunProceduresEndListbox, 'Enable', 'on');
+                curBackgroundColor = htGuiConnectionBGColor;
+            else
+                set(loopNumControl, 'String', 'INF', 'Enable', 'off');
+                set(toRunProceduresEndListbox, 'Enable', 'off');
+                curBackgroundColor = htGuiConnectionBGColor + 3*(1 - htGuiConnectionBGColor)/4;
+            end
+            set(toRunProceduresEndListbox, 'backgroundcolor', [1, 1, 1]); % This is necessary because Matlab won't update the color otherwise
+            set(toRunProceduresEndListbox, 'backgroundcolor', curBackgroundColor);
         end
         
     end
@@ -1274,27 +1283,6 @@ end
             set(toAddStartButtonControl, 'Enable', 'on');
         end
         
-    end
-
-    function loadData(pathAndFileName)
-        varsToLoad = load(pathAndFileName);
-        set(toRunProceduresStartListbox, 'String', varsToLoad.procedureWindowStartStrings);
-        set(toRunProceduresLoopListbox, 'String', varsToLoad.procedureWindowLoopStrings);
-        set(toRunProceduresEndListbox, 'String', varsToLoad.procedureWindowEndStrings);
-        procedureVarsStructure = varsToLoad.procedureVarsStructure;
-        procedureAndInstrumentSettings = varsToLoad.procedureAndInstrumentSettings;
-        set(finiteLoopCheckboxControl, 'Value', procedureAndInstrumentSettings.finiteLoop);
-        if(procedureAndInstrumentSettings.finiteLoop)
-            set(loopNumControl, 'String', procedureAndInstrumentSettings.finiteLoopNum, 'Enable', 'on');
-            set(toRunProceduresEndListbox, 'Enable', 'on');
-            curBackgroundColor = htGuiConnectionBGColor;
-        else
-            set(loopNumControl, 'String', 'INF', 'Enable', 'off');
-            set(toRunProceduresEndListbox, 'Enable', 'off');
-            curBackgroundColor = htGuiConnectionBGColor + 3*(1 - htGuiConnectionBGColor)/4;
-        end
-        set(toRunProceduresEndListbox, 'backgroundcolor', [1, 1, 1]); % This is necessary because Matlab won't update the color otherwise
-        set(toRunProceduresEndListbox, 'backgroundcolor', curBackgroundColor);
     end
 
 end
