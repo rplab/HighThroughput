@@ -68,22 +68,17 @@ classdef htAOTF < htInstrument
         %          aotfSerialObj - The AOTF object used to communicate with
         %            the actual console via Matlab's serial api.
         %          asiSerialObj - The ASI stage object used to communicate 
-        %            with the actual console via Matlab's serial api. Used
-        %            to control the filterwheel.
+        %            with
+        %            the actual console via Matlab's serial api.
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: aotf = aotf.AOTFOutputNone(aotfSerialObj, asiSerialObj);
+        % Example: aotf = aotf.AOTFOutputNone(aotfSerialObj);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function obj = AOTFOutputNone(obj, aotfSerialObj, asiSerialObj)
             
-            % See the AOTF manual for details on syntax. L2 and L3 refer to
-            % lines 2 and 3, which as of Feb. 2018 are GFP and RFP, resp.
-            if(obj.iSuccessfulConnection == 1)
-                query(aotfSerialObj,'L2O0');
-                query(aotfSerialObj,'L3O0');
-            end
-            query(asiSerialObj,'MP 0');
+            query(aotfSerialObj,'L2O0');
+            query(aotfSerialObj,'L3O0');
             
         end
     end
