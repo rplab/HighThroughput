@@ -51,8 +51,9 @@ classdef htAOTF < htInstrument
                 
                 try
                     fopen(aotfSerialObj);
-                    htForm.PrintStringToWindow(infoWindow, '[htAOTF] AOTF successfully connected.');
                     obj.iSuccessfulConnection = 1;
+                    htForm.PrintStringToWindow(infoWindow, '[htAOTF] AOTF successfully connected.');
+                    
                 catch ME1 %#ok Leave this comment to keep the warning about not using the variable from popping up
                     htForm.PrintStringToWindow(infoWindow, 'Warning: [htAOTF] No AOTF found; aborting connection attempt.');
                     button = questdlg(strcat('No AOTF with the com port ''', comPort, ''' can be found, continue anyway?'));

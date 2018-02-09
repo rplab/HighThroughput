@@ -65,6 +65,8 @@ currentLoopNumber = 1;
 instrumentSessionsCellArray = [];
 niDaqSession = [];
 asiSerialObj = [];
+kdsPumpSerialObj = [];
+hamamatsuCameraObj = [];
 aotfSerialObj = [];
 unusedVariable1 = []; %#ok This is for the user to store temporary information when running the program
 unusedVariable2 = []; %#ok This is for the user to store temporary information when running the program
@@ -228,7 +230,7 @@ else
     procedureWindowStartStrings = get(toRunProceduresStartListbox, 'String');
     procedureWindowLoopStrings = get(toRunProceduresLoopListbox, 'String');
     procedureWindowEndStrings = get(toRunProceduresEndListbox, 'String');
-    save(defaultFilePathAndFile, 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings');
+    save(defaultFilePathAndFile, 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings', 'curMethodsToRunCells');
 end
 
 % Connect to instruments
@@ -240,6 +242,12 @@ if(instrumentInstancesCellArray{1}.userWantsToConnect)
 end
 if(instrumentInstancesCellArray{2}.userWantsToConnect)
     asiSerialObj = instrumentSessionsCellArray{1, 2};
+end
+if(instrumentInstancesCellArray{3}.userWantsToConnect)
+    kdsPumpSerialObj = instrumentSessionsCellArray{1, 3};
+end
+if(instrumentInstancesCellArray{4}.userWantsToConnect)
+    hamamatsuCameraObj = instrumentSessionsCellArray{1, 4};
 end
 if(instrumentInstancesCellArray{5}.userWantsToConnect)
     aotfSerialObj = instrumentSessionsCellArray{1, 5};
@@ -638,7 +646,7 @@ end
                 procedureWindowStartStrings = get(toRunProceduresStartListbox, 'String'); %#ok since we're defining it just to save it
                 procedureWindowLoopStrings = get(toRunProceduresLoopListbox, 'String'); %#ok since we're defining it just to save it
                 procedureWindowEndStrings = get(toRunProceduresEndListbox, 'String'); %#ok since we're defining it just to save it
-                save(strcat(PathToFile, filesep, FileName), 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings');
+                save(strcat(PathToFile, filesep, FileName), 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings', 'curMethodsToRunCells');
             end
         end
         
@@ -646,7 +654,7 @@ end
             procedureWindowStartStrings = get(toRunProceduresStartListbox, 'String');
             procedureWindowLoopStrings = get(toRunProceduresLoopListbox, 'String');
             procedureWindowEndStrings = get(toRunProceduresEndListbox, 'String');
-            save(defaultFilePathAndFile, 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings');
+            save(defaultFilePathAndFile, 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings', 'curMethodsToRunCells');
         end
         
         function proceduresLoadButton_Callback(~, ~)
@@ -891,7 +899,7 @@ end
             if(attemptDisconnect)
                 for i=1:numInstruments
                     if(whichInstrumentsConnected(i))
-                        instrumentInstancesCellArray{i}.Disconnect(instrumentSessionsCellArray{i});
+                        instrumentInstancesCellArray{i}.Disconnect(infoWindow, instrumentSessionsCellArray{i});
                     end
                 end
             end
@@ -1327,6 +1335,7 @@ end
         set(toRunProceduresStartListbox, 'String', varsToLoad.procedureWindowStartStrings);
         set(toRunProceduresLoopListbox, 'String', varsToLoad.procedureWindowLoopStrings);
         set(toRunProceduresEndListbox, 'String', varsToLoad.procedureWindowEndStrings);
+        curMethodsToRunCells = varsToLoad.curMethodsToRunCells;
         procedureVarsStructure = varsToLoad.procedureVarsStructure;
         procedureAndInstrumentSettings = varsToLoad.procedureAndInstrumentSettings;
         set(finiteLoopCheckboxControl, 'Value', procedureAndInstrumentSettings.finiteLoop);

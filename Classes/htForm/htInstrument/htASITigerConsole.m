@@ -59,7 +59,9 @@ classdef htASITigerConsole < htInstrument
                 
                 try
                     fopen(asiSerialObj);
+                    obj.iSuccessfulConnection = 1;
                     htForm.PrintStringToWindow(infoWindow, '[htASITigerConsole] ASI stage successfully connected.');
+                    
                 catch ME1 %#ok Leave this comment to keep the warning about not using the variable from popping up
                     htForm.PrintStringToWindow(infoWindow, 'Warning: [htASITigerConsole] No ASI Tiger Console found; aborting connection attempt.');
                     button = questdlg(strcat('No ASI Tiger Console with the com port ''',comPort,''' can be found, continue anyway?'));
@@ -245,7 +247,7 @@ classdef htASITigerConsole < htInstrument
         function obj = SwitchFilterWheelToEmpty(obj, infoWindow, asiSerialObj)
             
             if(obj.iSuccessfulConnection == 1)
-                query(asiSerialObj, obj.defaultFilterWheelPosition);
+                fprintf(asiSerialObj, obj.defaultFilterWheelPosition);
                 htForm.PrintStringToWindow(infoWindow, '[htASITigerConsole] Filter wheel set to empty.');
             else
                 if(obj.warningsVerbose)
@@ -275,7 +277,7 @@ classdef htASITigerConsole < htInstrument
         function obj = SwitchFilterWheelToGFP(obj, infoWindow, asiSerialObj)
             
             if(obj.iSuccessfulConnection == 1)
-                query(asiSerialObj, 'MP 1');
+                fprintf(asiSerialObj, 'MP 1');
                 htForm.PrintStringToWindow(infoWindow, '[htASITigerConsole] Filter wheel set to GFP.');
             else
                 if(obj.warningsVerbose)
@@ -305,7 +307,7 @@ classdef htASITigerConsole < htInstrument
         function obj = SwitchFilterWheelToRFP(obj, infoWindow, asiSerialObj)
             
             if(obj.iSuccessfulConnection == 1)
-                query(asiSerialObj, 'MP 2');
+                fprintf(asiSerialObj, 'MP 2');
                 htForm.PrintStringToWindow(infoWindow, '[htASITigerConsole] Filter wheel set to RFP.');
             else
                 if(obj.warningsVerbose)
@@ -368,7 +370,7 @@ classdef htASITigerConsole < htInstrument
             while(~finished)
                 pause(pauseTime);
                 stageAnswer = query(asiSerialObj,'/'); % This command is a rapid method for asking the controller if it is moving
-                if(strcmp('N',stageAnswer(2)))
+                if(strcmp('N',stageAnswer(1)))
                     finished = true;
                 end
             end
