@@ -20,14 +20,6 @@
 %        Allow user to "eval" outputs too.
 %
 % Current accomplishments: 
-%       Added some dummy variables to be used to store temporary
-%          information
-%       Added a check that instruments disconnected correctly when shutting
-%          down and an option to do so if not.
-%       htAOTF and htKDSPump have had many functions added, lots of checks and text to
-%          infoWindow, and more.
-%       htDaq and htASITigerConsole have been modified to use the
-%          infoWindow and to run more consistently.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function htGui(settings)
