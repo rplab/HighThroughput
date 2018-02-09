@@ -5,21 +5,13 @@
 %
 % Ideas: Can you make a listbox only do something on double-click?
 %
-% To do: If defaults are loaded, adding parameters overwrites the procedure
-%          selected (actually, its the loop section only)
-%        Close button disconnects instruments if user forgets to
-%        Remove ability to add procedures while program is running
+% To do: Remove ability to add procedures while program is running
 %        Delete button checks if inputs to further functions rely on its
-%          outputs
-%        Make procedure reordering buttons, edit, save default, 
-%          save, load, etc., work.
+%          outputs. Same for reordering buttons.
+%        Make procedure reordering buttons and edit button work.
 %        Make outputs at position i in procedure window be used as
 %          inputs at positions i+1...N.
-%        Outputs of a non-static class which do NOT output an update of
-%          their obj will not work correctly. Fix this.
 %        Allow user to "eval" outputs too.
-%
-% Current accomplishments: 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function htGui(settings)
@@ -225,7 +217,6 @@ else
     save(defaultFilePathAndFile, 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings', 'curMethodsToRunCells');
 end
 
-% Connect to instruments
 % Connect to instruments. This code isn't strictly necessary but is going
 % to make a lot of people's lives easier.
 [procedureInstance, instrumentInstancesCellArray, instrumentSessionsCellArray] = procedureInstance.ConnectInstruments(infoWindow, instrumentInstancesCellArray);

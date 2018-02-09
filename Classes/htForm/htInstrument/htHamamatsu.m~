@@ -3,7 +3,7 @@
 % Inherits: htInstrument
 %
 % A Class for communicating with the Hamamatsu camera and triggering it for
-% frames, possibly saving them too.
+% frames, possibly saving them too
 %
 % Examples in this document assume an instance of the class "hamamatsu"
 %

@@ -10,12 +10,10 @@
 % To do: 
 %
 % Procedures to make: Switch AOTF/Filterwheel
-%                     Wait for fish trigger from camera
-%                     Position fish
-%                     Take movie
-%                     ReturnInstrumentIndex
-%                     InitializeDaqForStandardUse
-%                     ToggleValve1, ToggleValve2, ToggleLED
+%                     Allow user to click and drag camera preview to move
+%                       stage, buttons to move stage.
+%                     IN HTGUI, run button actually just prompts for and
+%                       opens a script.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 classdef htRunProcedure < htForm
@@ -70,35 +68,33 @@ classdef htRunProcedure < htForm
             
         end
         
-%         function [obj, instrumentInstancesCellArray] = InitializeDAQForStandardHTUse(obj, instrumentInstancesCellArray, niDaqSession)
-%             instrumentInstancesCellArray{1, 1} = instrumentInstancesCellArray{1, 1}.InitializeDigitalChannels(niDaqSession, {'valve1', '1.1', true, 'valve2', '1.0', true, 'LEDIn', '1.2', false, 'LEDOut', '1.3', true});
-%         end
-%         
-%         function [obj, instrumentInstancesCellArray] = ToggleValve1(obj, instrumentInstancesCellArray, niDaqSession)
-%             instrumentInstancesCellArray{1, 1} = instrumentInstancesCellArray{1, 1}.ToggleDigitalOutputChannelStates(niDaqSession, {'Valve1'});
-%         end
+        function [obj, instrumentInstancesCellArray] = InitializeDAQForStandardHTUse(obj, instrumentInstancesCellArray, niDaqSession)
+            instrumentInstancesCellArray{1, 1} = instrumentInstancesCellArray{1, 1}.InitializeDigitalChannels(niDaqSession, {'valve1', '1.1', true, 'testIn', '1.5', false, 'valve2', '1.0', true, 'LEDIn', '1.2', false, 'LEDOut', '1.3', true});
+        end
+        
+        function [obj, instrumentInstancesCellArray] = ToggleValve1(obj, instrumentInstancesCellArray, niDaqSession)
+            instrumentInstancesCellArray{1, 1} = instrumentInstancesCellArray{1, 1}.ToggleDigitalOutputChannelStates(niDaqSession, {'Valve1'});
+        end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Function: DebugDisplayMathOperations
         %
         % This method is used to test that the program is responsive, that
         % the infoWindow updates correctly, and gives the user something to
-        % test alongside other functions while debugging or creating new
-        % methods.
+        % test alongside other functions while
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
         %         infoWindow - A handle to the information window. Used to
         %           relay information to the user.
-        %         num1 - A number to perform math on.
-        %         num2 - A number to perform math on.
+        %         instrumentInstancesCellArray - A cell array containing N 
+        %           instruments objects instantiated elsewhere.
+        %         instrumentSessionsCellArray - A cell array containing
+        %           the sessions for the N instruments.
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
-        %          numSum - The sum of the two numbers.
-        %          numDifference - The difference of the two numbers.
-        %          numProduct - The product of the two numbers.
         %
-        % Example: [runProcedure, nSum, nDif, nProd] = runProcedure.DebugDisplayMathOperations(infoWindow, 5, 3);
+        % Example: runProcedure = runProcedure.DisconnectInstruments(infoWindow, instrumentInstancesCellArray, instrumentSessionsCellArray);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function [obj, numSum, numDifference, numProduct] = DebugDisplayMathOperations(obj, infoWindow, num1, num2)
             numSum = num1 + num2;
@@ -144,30 +140,16 @@ classdef htRunProcedure < htForm
     
     methods(Static)
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Function: DebugAddMultAndReturnBothStatic
-        %
-        % This method is used to test that the program is responsive, that
-        % the infoWindow updates correctly, and gives the user something to
-        % test alongside other functions while debugging or creating new
-        % methods. This static version is useful for making sure the eval
-        % function works with both types of functions.
-        %
-        % Inputs: infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
-        %         num1 - A number to perform math on.
-        %         num2 - A number to perform math on.
-        % Outputs: numSum - The sum of the two numbers.
-        %          numProduct - The product of the two numbers.
-        %
-        % Example: [nSum, nProd] = htRunProcedure.DebugAddMultAndReturnBothStatic(infoWindow, 5, 3);
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function [numSum, numProduct] = DebugAddMultAndReturnBothStatic(infoWindow, num1, num2)
-            numSum = num1 + num2;
-            numProduct = num1*num2;
-            htForm.PrintStringToWindow(infoWindow, strcat({'Sum is: '}, num2str(numSum)))
-            htForm.PrintStringToWindow(infoWindow, strcat({'Product is: '}, num2str(numProduct)))
+        function [res1, res2] = DebugAddMultAndReturnBothStatic(infoWindow, num1, num2)
+            res1 = num1 + num2;
+            res2 = num1*num2;
+            htForm.PrintStringToWindow(infoWindow, strcat({'Sum is: '}, num2str(res1)))
+            htForm.PrintStringToWindow(infoWindow, strcat({'Product is: '}, num2str(res2)))
         end
+        
+%         function RUN_SCRIPT(scriptStr)
+%             disp(scriptStr);
+%         end
         
     end
 end

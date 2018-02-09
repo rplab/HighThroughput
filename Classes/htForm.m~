@@ -59,17 +59,6 @@ classdef htForm
             htForm.PrintStringToWindow(infoWindow, strcat({'Pausing for '}, num2str(pauseTimeMilliseconds), {' milliseconds'}));
         end
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Function (Static): PrintTimestampToWindow
-        %
-        % This method prints the current time to the infoWindow.
-        %
-        % Inputs: infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
-        % Outputs: N/A
-        %
-        % Example: htForm.PrintTimestampToWindow(infowWindow);
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function PrintTimestampToWindow(infoWindow)
             htForm.PrintStringToWindow(infoWindow, datestr(datetime));
         end
