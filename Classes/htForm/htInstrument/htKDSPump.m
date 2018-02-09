@@ -53,10 +53,11 @@ classdef htKDSPump < htInstrument
                 try
                     % Establish connections
                     fopen(kdsPumpSerialObj);
+                    obj.iSuccessfulConnection = 1;
                     htForm.PrintStringToWindow(infoWindow, '[htKDSPump] KDS pump successfully connected.');
                     
                     % Set pump to default settings
-                    obj = obj.UpdatePumpParameters(infoWindow);
+                    obj = obj.UpdatePumpParameters(infoWindow, kdsPumpSerialObj);
                     
                 catch ME1 %#ok Leave this comment to keep the warning about not using the variable from popping up
                     htForm.PrintStringToWindow(infoWindow, 'Warning: [htKDSPump] No KDS pump found; aborting connection attempt.');
@@ -84,6 +85,8 @@ classdef htKDSPump < htInstrument
         %           suppressed if called FROM the instance.
         %         infoWindow - A handle to the information window. Used to
         %           relay information to the user.
+        %         kdsPumpSerialObj - The KDS pump object used to communicate
+        %           with the actual console via Matlab's serial api.
         %         rateNumber - An integer or float which represents the
         %           withdraw rate in units specified in the next variable.
         %         rateUnits - A string containing the units to use. Must
@@ -91,13 +94,14 @@ classdef htKDSPump < htInstrument
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: kdsPump = kdsPump.SetWithdrawRate(infoWindow, 1, 'ml/min');
+        % Example: kdsPump = kdsPump.SetWithdrawRate(infoWindow, kdsPumpSerialObj, 1, 'ml/min');
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = SetWithdrawRate(obj, infoWindow, rateNumber, rateUnits)
+        function obj = SetWithdrawRate(obj, infoWindow, kdsPumpSerialObj, rateNumber, rateUnits)
             
             if(obj.iSuccessfulConnection == 1)
                 stringToUpdateCell = strcat({'wrate '}, {num2str(rateNumber)}, {' '}, {rateUnits});
-                printf(serialPumpObj, stringToUpdateCell{:});
+                obj.withdrawRateSetString = stringToUpdateCell{:};
+                obj = obj.UpdatePumpParameters(infoWindow, kdsPumpSerialObj);
             else
                 if(obj.warningsVerbose)
                     htForm.PrintStringToWindow(infoWindow, 'Warning: [htKDSPump] No KDS pump available; skipping the set withdraw rate command.');
@@ -116,15 +120,17 @@ classdef htKDSPump < htInstrument
         %           suppressed if called FROM the instance.
         %         infoWindow - A handle to the information window. Used to
         %           relay information to the user.
+        %         kdsPumpSerialObj - The KDS pump object used to communicate
+        %           with the actual console via Matlab's serial api.
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: kdsPump = kdsPump.BeginWithdrawing(infoWindow);
+        % Example: kdsPump = kdsPump.BeginWithdrawing(infoWindow, kdsPumpSerialObj);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = BeginWithdrawing(obj, infoWindow)
+        function obj = BeginWithdrawing(obj, infoWindow, kdsPumpSerialObj)
             
             if(obj.iSuccessfulConnection == 1)
-                printf(serialPumpObj,'wrun');
+                fprintf(kdsPumpSerialObj,'wrun');
                 htForm.PrintStringToWindow(infoWindow, '[htKDSPump] The pump is now withdrawing.');
             else
                 if(obj.warningsVerbose)
@@ -145,6 +151,8 @@ classdef htKDSPump < htInstrument
         %           suppressed if called FROM the instance.
         %         infoWindow - A handle to the information window. Used to
         %           relay information to the user.
+        %         kdsPumpSerialObj - The KDS pump object used to communicate
+        %           with the actual console via Matlab's serial api.
         %         rateNumber - An integer or float which represents the
         %           withdraw rate in units specified in the next variable.
         %         rateUnits - A string containing the units to use. Must
@@ -152,13 +160,14 @@ classdef htKDSPump < htInstrument
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: kdsPump = kdsPump.SetInfuseRate(infoWindow, 1.0, 'ml/min');
+        % Example: kdsPump = kdsPump.SetInfuseRate(infoWindow, kdsPumpSerialObj, 1.0, 'ml/min');
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = SetInfuseRate(obj, infoWindow, rateNumber, rateUnits)
+        function obj = SetInfuseRate(obj, infoWindow, kdsPumpSerialObj, rateNumber, rateUnits)
             
             if(obj.iSuccessfulConnection == 1)
                 stringToUpdateCell = strcat({'irate '}, {num2str(rateNumber)}, {' '}, {rateUnits});
-                printf(serialPumpObj, stringToUpdateCell{:});
+                obj.infuseRateSetString = stringToUpdateCell{:};
+                obj = obj.UpdatePumpParameters(infoWindow, kdsPumpSerialObj);
             else
                 if(obj.warningsVerbose)
                     htForm.PrintStringToWindow(infoWindow, 'Warning: [htKDSPump] No KDS pump available; skipping the set infusion rate command.');
@@ -177,15 +186,17 @@ classdef htKDSPump < htInstrument
         %           suppressed if called FROM the instance.
         %         infoWindow - A handle to the information window. Used to
         %           relay information to the user.
+        %         kdsPumpSerialObj - The KDS pump object used to communicate
+        %           with the actual console via Matlab's serial api.
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: kdsPump = kdsPump.BeginInfusing(infoWindow);
+        % Example: kdsPump = kdsPump.BeginInfusing(infoWindow, kdsPumpSerialObj);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = BeginInfusing(obj, infoWindow)
+        function obj = BeginInfusing(obj, infoWindow, kdsPumpSerialObj)
             
             if(obj.iSuccessfulConnection == 1)
-                printf(serialPumpObj,'irun');
+                fprintf(kdsPumpSerialObj,'irun');
                 htForm.PrintStringToWindow(infoWindow, '[htKDSPump] The pump is now infusing.');
             else
                 if(obj.warningsVerbose)
@@ -204,15 +215,17 @@ classdef htKDSPump < htInstrument
         %           suppressed if called FROM the instance.
         %         infoWindow - A handle to the information window. Used to
         %           relay information to the user.
+        %         kdsPumpSerialObj - The KDS pump object used to communicate
+        %           with the actual console via Matlab's serial api.
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: kdsPump = kdsPump.StopInfusingAndOrWithdrawing(infoWindow);
+        % Example: kdsPump = kdsPump.StopInfusingAndOrWithdrawing(infoWindow, kdsPumpSerialObj);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = StopInfusingAndOrWithdrawing(obj, infoWindow)
+        function obj = StopInfusingAndOrWithdrawing(obj, infoWindow, kdsPumpSerialObj)
             
             if(obj.iSuccessfulConnection == 1)
-                printf(serialPumpObj,'stop');
+                fprintf(kdsPumpSerialObj,'stop');
                 htForm.PrintStringToWindow(infoWindow, '[htKDSPump] The pump has stopped.');
             else
                 if(obj.warningsVerbose)
@@ -234,12 +247,14 @@ classdef htKDSPump < htInstrument
         %           suppressed if called FROM the instance.
         %         infoWindow - A handle to the information window. Used to
         %           relay information to the user.
+        %         kdsPumpSerialObj - The KDS pump object used to communicate
+        %           with the actual console via Matlab's serial api.
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: kdsPump = kdsPump.UpdatePumpParameters(infoWindow);
+        % Example: kdsPump = kdsPump.UpdatePumpParameters(infoWindow, kdsPumpSerialObj);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = UpdatePumpParameters(obj, infoWindow)
+        function obj = UpdatePumpParameters(obj, infoWindow, kdsPumpSerialObj)
             
             if(obj.iSuccessfulConnection == 1)
                 fprintf(kdsPumpSerialObj, obj.diameterSetString);

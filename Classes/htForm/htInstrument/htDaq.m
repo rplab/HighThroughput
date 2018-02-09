@@ -59,7 +59,7 @@ classdef htDaq < htInstrument
                 successBool = false;
                 
                 % Set the deviceID
-                obj.deviceID = NIMaxID{:};
+                obj.deviceID = NIMaxID;
                 
                 % Obtain a list of devices
                 d = daq.getDevices;
