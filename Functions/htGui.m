@@ -17,9 +17,17 @@
 %          inputs at positions i+1...N.
 %        Outputs of a non-static class which do NOT output an update of
 %          their obj will not work correctly. Fix this.
+%        Allow user to "eval" outputs too.
 %
 % Current accomplishments: 
-%       
+%       Added some dummy variables to be used to store temporary
+%          information
+%       Added a check that instruments disconnected correctly when shutting
+%          down and an option to do so if not.
+%       htAOTF and htKDSPump have had many functions added, lots of checks and text to
+%          infoWindow, and more.
+%       htDaq and htASITigerConsole have been modified to use the
+%          infoWindow and to run more consistently.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function htGui(settings)
@@ -47,15 +55,6 @@ for instantiatingIndex=1:numInstruments
     instrumentInstancesCellArray{instantiatingIndex}.connectionChannelOrTypeString = settings.instrumentConnections(instantiatingIndex);
 end
 
-% Connect to instruments REMOVE THIS CODE WHEN OUTPUTS ARE WORKING**************************
-[procedureInstance, instrumentInstancesCellArray, instrumentSessionsCellArray] = procedureInstance.ConnectInstruments(instrumentInstancesCellArray);
-if(instrumentInstancesCellArray{1}.userWantsToConnect)
-    niDaqSession = instrumentSessionsCellArray{1, 1};
-end
-if(instrumentInstancesCellArray{2}.userWantsToConnect)
-    asiSerialObj = instrumentSessionsCellArray{1, 2};
-end
-
 % Initialize any variables you want access to here (even if defined below, use [])
 infoWindow = [];
 
@@ -63,6 +62,15 @@ infoWindow = [];
 % Initialize variables to provide procedures
 obj = 'obj'; %#ok since this is a dummy variable to help automate the autofilling processes of the add procedure buttons
 currentLoopNumber = 1;
+instrumentSessionsCellArray = [];
+niDaqSession = [];
+asiSerialObj = [];
+aotfSerialObj = [];
+unusedVariable1 = []; %#ok This is for the user to store temporary information when running the program
+unusedVariable2 = []; %#ok This is for the user to store temporary information when running the program
+unusedVariable3 = []; %#ok This is for the user to store temporary information when running the program
+unusedVariable4 = []; %#ok This is for the user to store temporary information when running the program
+unusedVariable5 = []; %#ok This is for the user to store temporary information when running the program
 curVariables = who; % Get a list of all the available variables created above this line
 
 %% Initialize variables
@@ -221,6 +229,20 @@ else
     procedureWindowLoopStrings = get(toRunProceduresLoopListbox, 'String');
     procedureWindowEndStrings = get(toRunProceduresEndListbox, 'String');
     save(defaultFilePathAndFile, 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings');
+end
+
+% Connect to instruments
+% Connect to instruments. This code isn't strictly necessary but is going
+% to make a lot of people's lives easier.
+[procedureInstance, instrumentInstancesCellArray, instrumentSessionsCellArray] = procedureInstance.ConnectInstruments(infoWindow, instrumentInstancesCellArray);
+if(instrumentInstancesCellArray{1}.userWantsToConnect)
+    niDaqSession = instrumentSessionsCellArray{1, 1};
+end
+if(instrumentInstancesCellArray{2}.userWantsToConnect)
+    asiSerialObj = instrumentSessionsCellArray{1, 2};
+end
+if(instrumentInstancesCellArray{5}.userWantsToConnect)
+    aotfSerialObj = instrumentSessionsCellArray{1, 5};
 end
 
 %% Functions
@@ -843,7 +865,40 @@ end
         end
         
         function close_Callback(~, ~)
-            close(f);
+            
+            anyInstrumentsStillConnected = false;
+            attemptDisconnect = true;
+            dontClose = false;
+            whichInstrumentsConnected = false(1, numInstruments);
+            for i=1:numInstruments
+                if(instrumentInstancesCellArray{i}.iSuccessfulConnection)
+                    anyInstrumentsStillConnected = true;
+                    whichInstrumentsConnected(i) = true;
+                end
+            end
+            
+            if(anyInstrumentsStillConnected)
+                button = questdlg(strcat('WARNING: Some instruments are still connected. Should I attempt to disconnect them before closing?'));
+                if(strcmp(button,'Yes'))
+                    attemptDisconnect = true;
+                elseif(strcmp(button,'No'))
+                    attemptDisconnect = false;
+                else
+                    dontClose = true;
+                end
+            end
+            
+            if(attemptDisconnect)
+                for i=1:numInstruments
+                    if(whichInstrumentsConnected(i))
+                        instrumentInstancesCellArray{i}.Disconnect(instrumentSessionsCellArray{i});
+                    end
+                end
+            end
+
+            if(~dontClose)
+                close(f);
+            end
         end
         
         function stop_Callback(~, ~)

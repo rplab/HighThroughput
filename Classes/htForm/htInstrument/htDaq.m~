@@ -40,8 +40,6 @@ classdef htDaq < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %            suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         NIMaxID - A string which matches the device ID in NI-MAX
         %            (e.g. 'HTDev1').
         % Outputs: obj - The instance of the class. Used to update
@@ -49,48 +47,43 @@ classdef htDaq < htInstrument
         %          daqSession - The data acquisition session (see
         %            daq.createSession).
         %
-        % Example: [niDaq, niDaqSession] = niDaq.Connect(infoWindow, 'HTDev1');
+        % Example: [niDaq, niDaqSession] = niDaq.Connect('HTDev1');
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function [obj, daqSession] = Connect(obj, infoWindow, NIMaxID)
             
-            if(obj.iSuccessfulConnection ~= 1)
+            % Initialize variables
+            successBool = false;
+            
+            % Set the deviceID
+            obj.deviceID = NIMaxID{:};
+            
+            % Obtain a list of devices
+            d = daq.getDevices;
+            
+            % Go through the list to find the right DAQ
+            for i=1:size(d,2)
                 
-                % Initialize variables
-                successBool = false;
-                
-                % Set the deviceID
-                obj.deviceID = NIMaxID{:};
-                
-                % Obtain a list of devices
-                d = daq.getDevices;
-                
-                % Go through the list to find the right DAQ
-                for i=1:size(d,2)
-                    
-                    % If the right DAQ exists, create the session.
-                    if(strcmp(d(i).ID, obj.deviceID))
-                        daqSession = daq.createSession(d(i).Vendor.ID);
-                        obj.iSuccessfulConnection = 1;
-                        successBool = true;
-                    end
-                    
+                % If the right DAQ exists, create the session.
+                if(strcmp(d(i).ID, obj.deviceID))
+                    daqSession = daq.createSession(d(i).Vendor.ID);
+                    obj.iSuccessfulConnection = 1;
+                    successBool = true;
                 end
                 
-                % If we didn't find the DAQ, let user decide if that is OK
-                if(~successBool)
-                    htForm.PrintStringToWindow(infoWindow, 'Warning: [htDaq] No DAQ found; aborting connection attempt.');
-                    button = questdlg(strcat('No DAQ with the ID ''',obj.deviceID,''' can be found, continue anyway?'));
-                    if(strcmp(button,'Yes'))
-                        obj.iSuccessfulConnection = 0;
-                    else
-                        obj.iSuccessfulConnection = -1;
-                    end
-                    daqSession = -1;
+            end
+            
+            % If we didn't find the DAQ, let user decide if that is OK
+            if(~successBool)
+                htForm.PrintStringToWindow(infoWindow, 'Warning: [htDaq] No DAQ found; aborting connection attempt.');
+                button = questdlg(strcat('No DAQ with the ID ''',obj.deviceID,''' can be found, continue anyway?'));
+                if(strcmp(button,'Yes'))
+                    obj.iSuccessfulConnection = 0;
                 else
-                    htForm.PrintStringToWindow(infoWindow, '[htDAQ] DAQ successfully connected.');
+                    obj.iSuccessfulConnection = -1;
                 end
+                daqSession = -1;
             else
-                htForm.PrintStringToWindow(infoWindow, '[htDaq] DAQ already successfully connected; skipping ''Connect'' command.');
+                htForm.PrintStringToWindow(infoWindow, '[htDAQ] DAQ successfully connected.');
             end
             
         end
@@ -103,8 +96,6 @@ classdef htDaq < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %            suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         objSession - The data acquisition session acquired from
         %            the connect method.
         %         namesChannelsAndBoolStates_CellArray - A cell array of
@@ -124,9 +115,9 @@ classdef htDaq < htInstrument
         % Notes: If you want to change channels, remember to disconnect
         %        and then reconnect before calling this function again.
         %
-        % Example: niDaq = niDaq.InitializeDigitalChannels(infoWindow, niDaqSession, {'valve1', '1.1', true, 'testIn', '1.5', false, 'valve2', '1.0', true, 'LEDIn' '1.2', false});
+        % Example: niDaq = niDaq.InitializeDigitalChannels(niDaqSession, {'valve1', '1.1', true, 'testIn', '1.5', false, 'valve2', '1.0', true, 'LEDIn' '1.2', false});
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = InitializeDigitalChannels(obj, infoWindow, niDaqSession, namesChannelsAndBoolStates_CellArray)
+        function obj = InitializeDigitalChannels(obj, niDaqSession, namesChannelsAndBoolStates_CellArray)
             
             % If the DAQ session was started...
             if(obj.iSuccessfulConnection == 1)
@@ -168,7 +159,7 @@ classdef htDaq < htInstrument
                 
                 % Set the states of all channels to false
                 obj.currentDigitalStates = false(1, numChannels);
-                htForm.PrintStringToWindow(infoWindow, sprintf('DAQ: Established %i digital channels', numChannels));
+                htForm.PrintStringToWindow(infoWindow, sprintf('DAQ established %i digital channels', numChannels));
                 
             else
                 if(obj.warningsVerbose)
@@ -185,8 +176,6 @@ classdef htDaq < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %            suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         objSession - The data acquisition session acquired from
         %            the connect method.
         %         channelNamesWithStates_CellArray - A cell array of
@@ -196,9 +185,9 @@ classdef htDaq < htInstrument
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: niDaq = niDaq.SetDigitalOutputChannelStates(infoWindow, niDaqSession, {'valve1', true, 'valve2', false});
+        % Example: niDaq = niDaq.SetDigitalOutputChannelStates(niDaqSession, {'valve1', true, 'valve2', false});
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = SetDigitalOutputChannelStates(obj, infoWindow, niDaqSession, channelNamesWithStates_CellArray)
+        function obj = SetDigitalOutputChannelStates(obj, niDaqSession, channelNamesWithStates_CellArray)
             
             % If the DAQ session was started...
             if(obj.iSuccessfulConnection == 1)
@@ -217,7 +206,7 @@ classdef htDaq < htInstrument
                         setToString = 'low';
                     end
                     stringToDisplay = strcat({'DAQ: Setting '}, toChangeChannelNames(i), {' to '}, {setToString});
-                    htForm.PrintStringToWindow(infoWindow, stringToDisplay{:});
+                    htForm.PrintStringToWindow(infoWindow, stringToDisplay);
                 end
                 
                 % Set all channels to the updated states, output scan only
@@ -241,8 +230,6 @@ classdef htDaq < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %            suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         objSession - The data acquisition session acquired from
         %            the connect method.
         %         channelNames_CellArray - A cell array of strings of
@@ -251,9 +238,9 @@ classdef htDaq < htInstrument
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: niDaq = niDaq.ToggleDigitalOutputChannelStates(infoWindow, niDaqSession, {'valve1', 'valve2'});
+        % Example: niDaq = niDaq.ToggleDigitalOutputChannelStates(niDaqSession, {'valve1', 'valve2'});
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = ToggleDigitalOutputChannelStates(obj, infoWindow, niDaqSession, channelNames_CellArray)
+        function obj = ToggleDigitalOutputChannelStates(obj, niDaqSession, channelNames_CellArray)
             
             % If the DAQ session was started...
             if(obj.iSuccessfulConnection == 1)
@@ -262,8 +249,6 @@ classdef htDaq < htInstrument
                 for i=1:length(channelNames_CellArray)
                     whichActualChannelBoolVect = arrayfun(@(x)(strcmp(channelNames_CellArray{i},x)), obj.channelNames, 'UniformOutput', false); % Outputs a boolean vector pertaining to which channel is actually being changed (i.e. hardware doesn't name channel, it just gives it an index; we are finding that index)
                     obj.currentDigitalStates([whichActualChannelBoolVect{:}]) = ~obj.currentDigitalStates([whichActualChannelBoolVect{:}]);
-                    stringToDisplay = strcat({'DAQ: Toggling '}, channelNames_CellArray(i));
-                    htForm.PrintStringToWindow(infoWindow, stringToDisplay{:});
                 end
                 
                 % Set all channels to the updated states, output scan only
@@ -285,8 +270,6 @@ classdef htDaq < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %            suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         objSession - The data acquisition session acquired from
         %            the connect method.
         %         channelName_String - A string containing the channel name
@@ -296,9 +279,9 @@ classdef htDaq < htInstrument
         %          channelState - A logical indicating whether or not the
         %             digital input is high (true) or low (false).
         %
-        % Example: [niDaq, LEDState] = niDaq.GetDigitalInputChannelState(infoWindow, niDaqSession, 'LEDIn');
+        % Example: [niDaq, LEDState] = niDaq.GetDigitalInputChannelState(niDaqSession, 'LEDIn');
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function [obj, channelState] = GetDigitalInputChannelState(obj, infoWindow, niDaqSession, channelName_String)
+        function [obj, channelState] = GetDigitalInputChannelState(obj, niDaqSession, channelName_String)
             
             % If the DAQ session was started...
             if(obj.iSuccessfulConnection == 1)
@@ -328,19 +311,17 @@ classdef htDaq < htInstrument
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Function: Disconnect
         %
-        % This method disconnects the computer from the DAQ.
+        % This method disconnects the computer from the DAQ
         %
         % Inputs: obj - The instance of the class. This argument is
         %            suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         objSession - The data acquisition session acquired from
         %            the connect method.
         % Outputs: N/A
         %
-        % Example: niDaq.Disconnect(infoWindow, niDaqSession);
+        % Example: niDaq.Disconnect(niDaqSession);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function Disconnect(obj, infoWindow, niDaqSession)
+        function Disconnect(obj, niDaqSession)
             
             % If the DAQ session was started...
             if(obj.iSuccessfulConnection == 1)

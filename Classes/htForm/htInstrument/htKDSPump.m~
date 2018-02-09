@@ -86,8 +86,7 @@ classdef htKDSPump < htInstrument
         %           relay information to the user.
         %         rateNumber - An integer or float which represents the
         %           withdraw rate in units specified in the next variable.
-        %         rateUnits - A string containing the units to use. Must
-        %           match the units available with the pump.
+        %         rateUnits - 
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
@@ -137,28 +136,21 @@ classdef htKDSPump < htInstrument
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Function: SetInfuseRate
         %
-        % This method sets the infuse rate for the pump. Be careful with
-        % your syntax as the units need to match the pump's list of
-        % acceptable units. 
+        % This method 
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
         %         infoWindow - A handle to the information window. Used to
         %           relay information to the user.
-        %         rateNumber - An integer or float which represents the
-        %           withdraw rate in units specified in the next variable.
-        %         rateUnits - A string containing the units to use. Must
-        %           match the units available with the pump.
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
         % Example: kdsPump = kdsPump.SetInfuseRate(infoWindow, 1.0, 'ml/min');
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = SetInfuseRate(obj, infoWindow, rateNumber, rateUnits)
+        function obj = SetInfuseRate(obj, infoWindow)
             
             if(obj.iSuccessfulConnection == 1)
-                stringToUpdateCell = strcat({'irate '}, {num2str(rateNumber)}, {' '}, {rateUnits});
-                printf(serialPumpObj, stringToUpdateCell{:});
+                
             else
                 if(obj.warningsVerbose)
                     htForm.PrintStringToWindow(infoWindow, 'Warning: [htKDSPump] No KDS pump available; skipping the set infusion rate command.');

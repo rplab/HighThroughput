@@ -37,8 +37,6 @@ classdef htASITigerConsole < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         comPort - A string which matches the virtual com port
         %           assigned to the device by windows.
         % Outputs: obj - The instance of the class. Used to update
@@ -47,21 +45,22 @@ classdef htASITigerConsole < htInstrument
         %            communicate with the actual console via Matlab's 
         %            serial api.
         %
-        % Example: [asiConsole, asiSerialObj] = asiConsole.Connect(infoWindow, 'Com5');
+        % Example: [asiConsole, asiSerialObj] = asiConsole.Connect('Com5');
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function [obj, asiSerialObj] = Connect(obj, infoWindow, comPort)
             
+            % Set the deviceID
             if(obj.iSuccessfulConnection ~= 1)
                 % Set the deviceID
-                obj.deviceComPort = comPort;
+                obj.deviceComPort = comPort{:};
                 
-                asiSerialObj = serial(comPort,'BaudRate',115200,'DataBits',8,'FlowControl','none','Parity','none','StopBits',1,'Terminator',{'CR/LF', 'CR'}); % Device is listed in Device Manager as Silicon Labs CP210x USB to UART Bridge in the Ports section
+                asiSerialObj = serial(comPort{:},'BaudRate',115200,'DataBits',8,'FlowControl','none','Parity','none','StopBits',1,'Terminator',{'CR/LF', 'CR'}); % Device is listed in Device Manager as Silicon Labs CP210x USB to UART Bridge in the Ports section
                 
                 try
                     fopen(asiSerialObj);
                     htForm.PrintStringToWindow(infoWindow, '[htASITigerConsole] ASI stage successfully connected.');
                 catch ME1 %#ok Leave this comment to keep the warning about not using the variable from popping up
-                    htForm.PrintStringToWindow(infoWindow, 'Warning: [htASITigerConsole] No ASI Tiger Console found; aborting connection attempt.');
+                    htForm.PrintStringToWindow(infoWindow, 'Warning: [htASITigerConsole] No DAQ found; aborting connection attempt.');
                     button = questdlg(strcat('No ASI Tiger Console with the com port ''',comPort,''' can be found, continue anyway?'));
                     if(strcmp(button,'Yes'))
                         obj.iSuccessfulConnection = 0;
@@ -84,8 +83,6 @@ classdef htASITigerConsole < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         asiSerialObj - The ASI console object used to communicate
         %           with the actual console via Matlab's serial api.
         % Outputs: obj - The instance of the class. Used to update
@@ -93,9 +90,9 @@ classdef htASITigerConsole < htInstrument
         %          positionVector - A 3-vector returning the x, y, and z
         %            position of the stage in microns.
         %
-        % Example: [asiConsole, positionVector] = asiConsole.QueryStagePosition(infoWindow, asiSerialObj);
+        % Example: [asiConsole, positionVector] = asiConsole.QueryStagePosition(asiSerialObj);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function [obj, positionVector] = QueryStagePosition(obj, infoWindow, asiSerialObj)
+        function [obj, positionVector] = QueryStagePosition(obj, asiSerialObj)
             
             % If the console is communicating, query all current positions
             if(obj.iSuccessfulConnection == 1)
@@ -122,8 +119,6 @@ classdef htASITigerConsole < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         asiSerialObj - The ASI console object used to communicate
         %           with the actual console via Matlab's serial api.
         %         moveAxis - Char of the axis name.
@@ -133,9 +128,9 @@ classdef htASITigerConsole < htInstrument
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: asiConsole = asiConsole.RelativeMoveStage(infoWindow, asiSerialObj, 'X', 1000, 1);
+        % Example: asiConsole = asiConsole.RelativeMoveStage(asiSerialObj, 'X', 1000, 1);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = RelativeMoveStage(obj, infoWindow, asiSerialObj, moveAxis, moveAmountMicrons, maxSpeed1True0False)
+        function obj = RelativeMoveStage(obj, asiSerialObj, moveAxis, moveAmountMicrons, maxSpeed1True0False)
             
             if(obj.iSuccessfulConnection == 1)
                 if(logical(maxSpeed1True0False))
@@ -161,8 +156,6 @@ classdef htASITigerConsole < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         asiSerialObj - The ASI console object used to communicate
         %           with the actual console via Matlab's serial api.
         %         moveAxis - Char of the axis name.
@@ -172,9 +165,9 @@ classdef htASITigerConsole < htInstrument
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: asiConsole = asiConsole.MoveStage(infoWindow, asiSerialObj, 'X', 1452.2, 1);
+        % Example: asiConsole = asiConsole.MoveStage(asiSerialObj, 'X', 1452.2, 1);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = MoveStage(obj, infoWindow, asiSerialObj, moveAxis, movePositionMicrons, maxSpeed1True0False)
+        function obj = MoveStage(obj, asiSerialObj, moveAxis, movePositionMicrons, maxSpeed1True0False)
             
             if(obj.iSuccessfulConnection == 1)
                 if(logical(maxSpeed1True0False))
@@ -200,8 +193,6 @@ classdef htASITigerConsole < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         asiSerialObj - The ASI console object used to communicate
         %           with the actual console via Matlab's serial api.
         %         speedAxis - Char of the axis name.
@@ -210,9 +201,9 @@ classdef htASITigerConsole < htInstrument
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: asiConsole = asiConsole.MoveStage(infoWindow, asiSerialObj, 'X', 7.5);
+        % Example: asiConsole = asiConsole.MoveStage(asiSerialObj, 'X', 7.5);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = SetSpeed(obj, infoWindow, asiSerialObj, moveAxis, speedUnitsOfMMPerSec)
+        function obj = SetSpeed(obj, asiSerialObj, moveAxis, speedUnitsOfMMPerSec)
             
             if(obj.iSuccessfulConnection == 1)
                 queryCell = strcat({'SPEED '}, moveAxis, {'='}, num2str(speedUnitsOfMMPerSec));
@@ -233,16 +224,14 @@ classdef htASITigerConsole < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         asiSerialObj - The ASI console object used to communicate
         %           with the actual console via Matlab's serial api.
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: asiConsole = asiConsole.SwitchFilterWheelToEmpty(infoWindow, asiSerialObj);
+        % Example: asiConsole = asiConsole.SwitchFilterWheelToEmpty(asiSerialObj);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = SwitchFilterWheelToEmpty(obj, infoWindow, asiSerialObj)
+        function obj = SwitchFilterWheelToEmpty(obj, asiSerialObj)
             
             if(obj.iSuccessfulConnection == 1)
                 query(asiSerialObj, obj.defaultFilterWheelPosition);
@@ -263,16 +252,14 @@ classdef htASITigerConsole < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         asiSerialObj - The ASI console object used to communicate
         %           with the actual console via Matlab's serial api.
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: asiConsole = asiConsole.SwitchFilterWheelToGFP(infoWindow, asiSerialObj);
+        % Example: asiConsole = asiConsole.SwitchFilterWheelToGFP(asiSerialObj);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = SwitchFilterWheelToGFP(obj, infoWindow, asiSerialObj)
+        function obj = SwitchFilterWheelToGFP(obj, asiSerialObj)
             
             if(obj.iSuccessfulConnection == 1)
                 query(asiSerialObj, 'MP 1');
@@ -293,16 +280,14 @@ classdef htASITigerConsole < htInstrument
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         asiSerialObj - The ASI console object used to communicate
         %           with the actual console via Matlab's serial api.
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
-        % Example: asiConsole = asiConsole.SwitchFilterWheelToRFP(infoWindow, asiSerialObj);
+        % Example: asiConsole = asiConsole.SwitchFilterWheelToRFP(asiSerialObj);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = SwitchFilterWheelToRFP(obj, infoWindow, asiSerialObj)
+        function obj = SwitchFilterWheelToRFP(obj, asiSerialObj)
             
             if(obj.iSuccessfulConnection == 1)
                 query(asiSerialObj, 'MP 2');
@@ -318,19 +303,17 @@ classdef htASITigerConsole < htInstrument
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Function: Disconnect
         %
-        % This method disconnects the computer from the stage.
+        % This method disconnects the computer from the stage
         %
         % Inputs: obj - The instance of the class. This argument is
         %            suppressed if called FROM the instance.
-        %         infoWindow - A handle to the information window. Used to
-        %           relay information to the user.
         %         asiSerialObj - The ASI stage session acquired from
         %            the connect method.
         % Outputs: N/A
         %
-        % Example: asiConsole.Disconnect(infoWindow, asiSerialObj);
+        % Example: asiConsole.Disconnect(asiSerialObj);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function Disconnect(obj, infoWindow, asiSerialObj)
+        function Disconnect(obj, asiSerialObj)
             
             % If the DAQ session was started...
             if(obj.iSuccessfulConnection == 1)

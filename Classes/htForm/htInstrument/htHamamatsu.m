@@ -19,7 +19,11 @@ classdef htHamamatsu < htInstrument
     
     methods
         
-        function obj = Connect(obj)
+        function obj = Connect(obj, infoWindow, merp)
+            
+        end
+        
+        function Disconnect(obj, hamamatsuCameraObj)
             
         end
         

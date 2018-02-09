@@ -2,13 +2,16 @@
 % Class: htAOTF
 % Inherits: htInstrument
 %
-% A Class for communicating with...
+% A Class for communicating with and controlling the optoelectronics AOTF.
+% As of February 2018, this AOTF controls the laser light sent to the
+% chamber, with configureations 2 and 3 representing GFP and RFP,
+% respectively.
 %
 % Examples in this document assume an instance of the class "aotf"
 %
 % Ideas: 
 %
-% To do: Make sure the terminator is correct
+% To do:
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 classdef htAOTF < htInstrument
@@ -20,13 +23,15 @@ classdef htAOTF < htInstrument
     methods
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Function: connect
+        % Function: Connect
         %
         % This method connects the computer with the AOTF for a given 
         % com port.
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
+        %         infoWindow - A handle to the information window. Used to
+        %           relay information to the user.
         %         comPort - A string which matches the virtual com port
         %           assigned to the device by windows.
         % Outputs: obj - The instance of the class. Used to update
@@ -36,22 +41,29 @@ classdef htAOTF < htInstrument
         %
         % Example: [aotf, aotfSerialObj] = aotf.Connect('Com19');
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function [obj, aotfSerialObj] = Connect(obj, comPort)
+        function [obj, aotfSerialObj] = Connect(obj, infoWindow, comPort)
             
             % Set the deviceID
-            obj.deviceComPort = comPort;
-            
-            aotfSerialObj = serial(comPort,'BaudRate',19200,'DataBits',8,'FlowControl','none','Parity','none','StopBits',1,'Terminator','CR'); % Device is listed in Device Manager as USB Serial Port
-
-            try
-               fopen(aotfSerialObj);
-            catch ME1 %#ok Leave this comment to keep the warning about not using the variable from popping up
-                button = questdlg(strcat('No AOTF with the com port ''', comPort, ''' can be found, continue anyway?'));
-                if(strcmp(button,'Yes'))
-                    obj.iSuccessfulConnection = 0;
-                else
-                    obj.iSuccessfulConnection = -1;
+            if(obj.iSuccessfulConnection ~= 1)
+                obj.deviceComPort = comPort;
+                
+                aotfSerialObj = serial(comPort,'BaudRate',19200,'DataBits',8,'FlowControl','none','Parity','none','StopBits',1,'Terminator','CR'); % Device is listed in Device Manager as USB Serial Port
+                
+                try
+                    fopen(aotfSerialObj);
+                    htForm.PrintStringToWindow(infoWindow, '[htAOTF] AOTF successfully connected.');
+                    obj.iSuccessfulConnection = 1;
+                catch ME1 %#ok Leave this comment to keep the warning about not using the variable from popping up
+                    htForm.PrintStringToWindow(infoWindow, 'Warning: [htAOTF] No AOTF found; aborting connection attempt.');
+                    button = questdlg(strcat('No AOTF with the com port ''', comPort, ''' can be found, continue anyway?'));
+                    if(strcmp(button,'Yes'))
+                        obj.iSuccessfulConnection = 0;
+                    else
+                        obj.iSuccessfulConnection = -1;
+                    end
                 end
+            else
+                htForm.PrintStringToWindow(infoWindow, '[htAOTF] AOTF already successfully connected; skipping ''Connect'' command.');
             end
             
         end
@@ -59,26 +71,154 @@ classdef htAOTF < htInstrument
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Function: AOTFOutputNone
         %
-        % This method sends a signal to the AOTF and the ASIStage to not
-        % allow laser light through and to change the filter wheel to be
-        % empty.
+        % This method sends a signal to the AOTF to block all laser light
+        % from reaching the chamber.
         %
         % Inputs: obj - The instance of the class. This argument is
         %           suppressed if called FROM the instance.
+        %         infoWindow - A handle to the information window. Used to
+        %           relay information to the user.
         %          aotfSerialObj - The AOTF object used to communicate with
-        %            the actual console via Matlab's serial api.
-        %          asiSerialObj - The ASI stage object used to communicate 
-        %            with
         %            the actual console via Matlab's serial api.
         % Outputs: obj - The instance of the class. Used to update
         %            instance properties.
         %
         % Example: aotf = aotf.AOTFOutputNone(aotfSerialObj);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function obj = AOTFOutputNone(obj, aotfSerialObj, asiSerialObj)
+        function obj = AOTFOutputNone(obj, infoWindow, aotfSerialObj)
             
-            query(aotfSerialObj,'L2O0');
-            query(aotfSerialObj,'L3O0');
+            % See the AOTF manual for details on syntax. L2 and L3 refer to
+            % lines 2 and 3, which as of Feb. 2018 are GFP and RFP, resp.
+            if(obj.iSuccessfulConnection == 1)
+                query(aotfSerialObj,'L2O0');
+                query(aotfSerialObj,'L3O0');
+                htForm.PrintStringToWindow(infoWindow, '[htAOTF] AOTF output changed to NONE');
+            else
+                if(obj.warningsVerbose)
+                    htForm.PrintStringToWindow(infoWindow, 'Warning: [htAOTF] No AOTF available; skipping AOTF output off.');
+                end
+            end
+            
+        end
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Function: AOTFOutputGFP
+        %
+        % This method sends a signal to the AOTF to allow GFP laser light
+        % to reach the chamber.
+        %
+        % Inputs: obj - The instance of the class. This argument is
+        %           suppressed if called FROM the instance.
+        %         infoWindow - A handle to the information window. Used to
+        %           relay information to the user.
+        %          aotfSerialObj - The AOTF object used to communicate with
+        %            the actual console via Matlab's serial api.
+        % Outputs: obj - The instance of the class. Used to update
+        %            instance properties.
+        %
+        % Example: aotf = aotf.AOTFOutputGFP(aotfSerialObj);
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        function obj = AOTFOutputGFP(obj, aotfSerialObj)
+            
+            % See the AOTF manual for details on syntax. L2 and L3 refer to
+            % lines 2 and 3, which as of Feb. 2018 are GFP and RFP, resp.
+            if(obj.iSuccessfulConnection == 1)
+                query(aotfSerialObj,'L2O1');
+                query(aotfSerialObj,'L3O0');
+            else
+                if(obj.warningsVerbose)
+                    disp('Warning: [htAOTF] No AOTF available; skipping AOTF output to GFP.');
+                end
+            end
+            
+        end
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Function: AOTFOutputRFP
+        %
+        % This method sends a signal to the AOTF to allow RFP laser light
+        % to reach the chamber.
+        %
+        % Inputs: obj - The instance of the class. This argument is
+        %           suppressed if called FROM the instance.
+        %         infoWindow - A handle to the information window. Used to
+        %           relay information to the user.
+        %          aotfSerialObj - The AOTF object used to communicate with
+        %            the actual console via Matlab's serial api.
+        % Outputs: obj - The instance of the class. Used to update
+        %            instance properties.
+        %
+        % Example: aotf = aotf.AOTFOutputRFP(aotfSerialObj);
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        function obj = AOTFOutputRFP(obj, aotfSerialObj)
+            
+            % See the AOTF manual for details on syntax. L2 and L3 refer to
+            % lines 2 and 3, which as of Feb. 2018 are GFP and RFP, resp.
+            if(obj.iSuccessfulConnection == 1)
+                query(aotfSerialObj,'L2O0');
+                query(aotfSerialObj,'L3O1');
+            else
+                if(obj.warningsVerbose)
+                    disp('Warning: [htAOTF] No AOTF available; skipping AOTF output to RFP.');
+                end
+            end
+            
+        end
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Function: AOTFOutputGFPAndRFP
+        %
+        % This method sends a signal to the AOTF to allow GFP and RFP laser
+        % light to reach the chamber.
+        %
+        % Inputs: obj - The instance of the class. This argument is
+        %           suppressed if called FROM the instance.
+        %          aotfSerialObj - The AOTF object used to communicate with
+        %            the actual console via Matlab's serial api.
+        % Outputs: obj - The instance of the class. Used to update
+        %            instance properties.
+        %
+        % Example: aotf = aotf.AOTFOutputGFPAndRFP(aotfSerialObj);
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        function obj = AOTFOutputGFPAndRFP(obj, aotfSerialObj)
+            
+            % See the AOTF manual for details on syntax. L2 and L3 refer to
+            % lines 2 and 3, which as of Feb. 2018 are GFP and RFP, resp.
+            if(obj.iSuccessfulConnection == 1)
+                query(aotfSerialObj,'L2O1');
+                query(aotfSerialObj,'L3O1');
+            else
+                if(obj.warningsVerbose)
+                    disp('Warning: [htAOTF] No AOTF available; skipping AOTF output to both GFP and RFP.');
+                end
+            end
+            
+        end
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Function: Disconnect
+        %
+        % This method disconnects the computer from the AOTF.
+        %
+        % Inputs: obj - The instance of the class. This argument is
+        %            suppressed if called FROM the instance.
+        %         objSession - The AOTF session acquired from
+        %            the connect method.
+        % Outputs: N/A
+        %
+        % Example: asiConsole.Disconnect(aotfSerialObj);
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        function Disconnect(obj, aotfSerialObj)
+            
+            % If the DAQ session was started...
+            if(obj.iSuccessfulConnection == 1)
+                fclose(aotfSerialObj);
+                delete(aotfSerialObj);
+            else
+                if(obj.warningsVerbose)
+                    disp('Warning: [htAOTF] No AOTF available; skipping AOTF disconnection.');
+                end
+            end
             
         end
     end

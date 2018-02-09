@@ -5,7 +5,9 @@
 %
 % Ideas: Can you make a listbox only do something on double-click?
 %
-% To do: Close button disconnects instruments if user forgets to
+% To do: If defaults are loaded, adding parameters overwrites the procedure
+%          selected (actually, its the loop section only)
+%        Close button disconnects instruments if user forgets to
 %        Remove ability to add procedures while program is running
 %        Delete button checks if inputs to further functions rely on its
 %          outputs
@@ -16,19 +18,10 @@
 %        Outputs of a non-static class which do NOT output an update of
 %          their obj will not work correctly. Fix this.
 %
-% Current work: 
-%       Added a new "Eval" checkbox to inputs, allowing the user to treat
-%          the input like a command to evaluate
-%       Fixed a bug where cancelling a save info window text to file would
-%          result in a harmless but annoying error
-%       Prevented the user from pressing Run multiple times
-%       Pause button is now used to resume, its text updates when pressed,
-%          and it disables the run button when pressed
-%       Fixed a bug where inputs selected from the dropdown weren't being
-%          set correctly
-%       Listbox updates position of current command being executed
-%       User can now save as, load, and set as default various procedures
-%          and configurations
+% Current accomplishments: 
+%       Added some dummy variables to be used to store temporary
+%          information
+%
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function htGui(settings)
@@ -56,15 +49,6 @@ for instantiatingIndex=1:numInstruments
     instrumentInstancesCellArray{instantiatingIndex}.connectionChannelOrTypeString = settings.instrumentConnections(instantiatingIndex);
 end
 
-% Connect to instruments REMOVE THIS CODE WHEN OUTPUTS ARE WORKING**************************
-[procedureInstance, instrumentInstancesCellArray, instrumentSessionsCellArray] = procedureInstance.ConnectInstruments(instrumentInstancesCellArray); %#ok since it defines strings later
-if(instrumentInstancesCellArray{1}.userWantsToConnect)
-    niDaqSession = instrumentSessionsCellArray{1, 1};
-end
-if(instrumentInstancesCellArray{2}.userWantsToConnect)
-    asiSerialObj = instrumentSessionsCellArray{1, 2};
-end
-
 % Initialize any variables you want access to here (even if defined below, use [])
 infoWindow = [];
 
@@ -72,24 +56,25 @@ infoWindow = [];
 % Initialize variables to provide procedures
 obj = 'obj'; %#ok since this is a dummy variable to help automate the autofilling processes of the add procedure buttons
 currentLoopNumber = 1;
+instrumentSessionsCellArray = [];
+niDaqSession = [];
+asiSerialObj = [];
+unusedVariable1 = []; %#ok This is for the user to store temporary information when running the program
+unusedVariable2 = []; %#ok This is for the user to store temporary information when running the program
+unusedVariable3 = []; %#ok This is for the user to store temporary information when running the program
+unusedVariable4 = []; %#ok This is for the user to store temporary information when running the program
+unusedVariable5 = []; %#ok This is for the user to store temporary information when running the program
 curVariables = who; % Get a list of all the available variables created above this line
 
 %% Initialize variables
-rootDefaultPathName = 'htMostRecentProcedureSettings.mat';
-possibleFile = dir(strcat(settings.defaultPath, filesep, rootDefaultPathName));
-if(~isempty(possibleFile))
-    
-else
-    procedureAndInstrumentSettings.finiteLoop = true;
-    procedureAndInstrumentSettings.finiteLoopNum = 10;
-    save(strcat(settings.defaultPath, filesep, rootDefaultPathName), 'procedureAndInstrumentSettings');
-end
         
 % Initialize procedure/instrument variables
 metaClassMenuChoices = settings.instrumentNames;
 metaClassMenuChoices = ['Procedures', metaClassMenuChoices];
 metaClassNameCellArray = settings.instrumentClasses;
 metaClassNameCellArray = ['htRunProcedure', metaClassNameCellArray];
+procedureAndInstrumentSettings.finiteLoop = true;
+procedureAndInstrumentSettings.finiteLoopNum = 10;
 
 % Initialize handles to a few buttons
 toAddEndButtonControl = [];
@@ -186,6 +171,8 @@ initialEmptyStruct = procedureVarsStructure;
 toRunProceduresEndListbox = [];
 toRunProceduresLoopListbox = [];
 toRunProceduresStartListbox = [];
+finiteLoopCheckboxControl = [];
+loopNumControl = [];
 
 %% Create GUI
 % Create figure
@@ -222,6 +209,31 @@ uicontrol('Parent',f,'Style','text',...
 generateInformationPanel;
 generateProcedurePanel;
 generateExperimentButtonsPanel;
+
+% Populate with initial settings
+% Populate initial settings
+rootDefaultPathName = 'htMostRecentProcedureSettings.mat';
+defaultFilePathAndFile = strcat(settings.defaultPath, filesep, rootDefaultPathName);
+possibleFile = dir(defaultFilePathAndFile);
+if(~isempty(possibleFile))
+    loadData(defaultFilePathAndFile);
+else
+    procedureWindowStartStrings = get(toRunProceduresStartListbox, 'String');
+    procedureWindowLoopStrings = get(toRunProceduresLoopListbox, 'String');
+    procedureWindowEndStrings = get(toRunProceduresEndListbox, 'String');
+    save(defaultFilePathAndFile, 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings');
+end
+
+% Connect to instruments
+% Connect to instruments. This code isn't strictly necessary but is going
+% to make a lot of people's lives easier.
+[procedureInstance, instrumentInstancesCellArray, instrumentSessionsCellArray] = procedureInstance.ConnectInstruments(infoWindow, instrumentInstancesCellArray);
+if(instrumentInstancesCellArray{1}.userWantsToConnect)
+    niDaqSession = instrumentSessionsCellArray{1, 1};
+end
+if(instrumentInstancesCellArray{2}.userWantsToConnect)
+    asiSerialObj = instrumentSessionsCellArray{1, 2};
+end
 
 %% Functions
 
@@ -621,7 +633,10 @@ generateExperimentButtonsPanel;
         end
         
         function proceduresSaveDefaultButton_Callback(~, ~)
-            
+            procedureWindowStartStrings = get(toRunProceduresStartListbox, 'String');
+            procedureWindowLoopStrings = get(toRunProceduresLoopListbox, 'String');
+            procedureWindowEndStrings = get(toRunProceduresEndListbox, 'String');
+            save(defaultFilePathAndFile, 'procedureVarsStructure', 'procedureAndInstrumentSettings', 'procedureWindowStartStrings', 'procedureWindowLoopStrings', 'procedureWindowEndStrings');
         end
         
         function proceduresLoadButton_Callback(~, ~)
@@ -629,27 +644,6 @@ generateExperimentButtonsPanel;
             if(PathToFile ~= 0)
                 loadData(strcat(PathToFile, filesep, FileName));
             end
-        end
-        
-        function loadData(pathAndFileName)
-            varsToLoad = load();
-            set(toRunProceduresStartListbox, 'String', varsToLoad.procedureWindowStartStrings);
-            set(toRunProceduresLoopListbox, 'String', varsToLoad.procedureWindowLoopStrings);
-            set(toRunProceduresEndListbox, 'String', varsToLoad.procedureWindowEndStrings);
-            procedureVarsStructure = varsToLoad.procedureVarsStructure;
-            procedureAndInstrumentSettings = varsToLoad.procedureAndInstrumentSettings;
-            set(finiteLoopCheckboxControl, 'Value', procedureAndInstrumentSettings.finiteLoop);
-            if(procedureAndInstrumentSettings.finiteLoop)
-                set(loopNumControl, 'String', procedureAndInstrumentSettings.finiteLoopNum, 'Enable', 'on');
-                set(toRunProceduresEndListbox, 'Enable', 'on');
-                curBackgroundColor = htGuiConnectionBGColor;
-            else
-                set(loopNumControl, 'String', 'INF', 'Enable', 'off');
-                set(toRunProceduresEndListbox, 'Enable', 'off');
-                curBackgroundColor = htGuiConnectionBGColor + 3*(1 - htGuiConnectionBGColor)/4;
-            end
-            set(toRunProceduresEndListbox, 'backgroundcolor', [1, 1, 1]); % This is necessary because Matlab won't update the color otherwise
-            set(toRunProceduresEndListbox, 'backgroundcolor', curBackgroundColor);
         end
         
     end
@@ -861,7 +855,40 @@ generateExperimentButtonsPanel;
         end
         
         function close_Callback(~, ~)
-            close(f);
+            
+            anyInstrumentsStillConnected = false;
+            attemptDisconnect = true;
+            dontClose = false;
+            whichInstrumentsConnected = false(1, numInstruments);
+            for i=1:numInstruments
+                if(instrumentInstancesCellArray{i}.iSuccessfulConnection)
+                    anyInstrumentsStillConnected = true;
+                    whichInstrumentsConnected(i) = true;
+                end
+            end
+            
+            if(anyInstrumentsStillConnected)
+                button = questdlg(strcat('WARNING: Some instruments are still connected. Should I attempt to disconnect them before closing?'));
+                if(strcmp(button,'Yes'))
+                    attemptDisconnect = true;
+                elseif(strcmp(button,'No'))
+                    attemptDisconnect = false;
+                else
+                    dontClose = true;
+                end
+            end
+            
+            if(attemptDisconnect)
+                for i=1:numInstruments
+                    if(whichInstrumentsConnected(i))
+                        instrumentInstancesCellArray{i}.Disconnect(instrumentSessionsCellArray{i});
+                    end
+                end
+            end
+
+            if(~dontClose)
+                close(f);
+            end
         end
         
         function stop_Callback(~, ~)
@@ -1283,6 +1310,27 @@ generateExperimentButtonsPanel;
             set(toAddStartButtonControl, 'Enable', 'on');
         end
         
+    end
+
+    function loadData(pathAndFileName)
+        varsToLoad = load(pathAndFileName);
+        set(toRunProceduresStartListbox, 'String', varsToLoad.procedureWindowStartStrings);
+        set(toRunProceduresLoopListbox, 'String', varsToLoad.procedureWindowLoopStrings);
+        set(toRunProceduresEndListbox, 'String', varsToLoad.procedureWindowEndStrings);
+        procedureVarsStructure = varsToLoad.procedureVarsStructure;
+        procedureAndInstrumentSettings = varsToLoad.procedureAndInstrumentSettings;
+        set(finiteLoopCheckboxControl, 'Value', procedureAndInstrumentSettings.finiteLoop);
+        if(procedureAndInstrumentSettings.finiteLoop)
+            set(loopNumControl, 'String', procedureAndInstrumentSettings.finiteLoopNum, 'Enable', 'on');
+            set(toRunProceduresEndListbox, 'Enable', 'on');
+            curBackgroundColor = htGuiConnectionBGColor;
+        else
+            set(loopNumControl, 'String', 'INF', 'Enable', 'off');
+            set(toRunProceduresEndListbox, 'Enable', 'off');
+            curBackgroundColor = htGuiConnectionBGColor + 3*(1 - htGuiConnectionBGColor)/4;
+        end
+        set(toRunProceduresEndListbox, 'backgroundcolor', [1, 1, 1]); % This is necessary because Matlab won't update the color otherwise
+        set(toRunProceduresEndListbox, 'backgroundcolor', curBackgroundColor);
     end
 
 end

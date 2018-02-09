@@ -50,15 +50,14 @@ classdef htRunProcedure < htForm
         %
         % Example: [runProcedure, sessionCellArray] = runProcedure.connectInstruments([{niDaq},{asiConsole}]);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function [obj, instrumentInstancesCellArray, instrumentSessionsCellArray] = ConnectInstruments(obj, instrumentInstancesCellArray)
+        function [obj, instrumentInstancesCellArray, instrumentSessionsCellArray] = ConnectInstruments(obj, infoWindow, instrumentInstancesCellArray)
             
             numInstruments = size(instrumentInstancesCellArray, 2);
             instrumentSessionsCellArray = cell(1, numInstruments);
             
             for i=1:numInstruments
                 if(instrumentInstancesCellArray{1, i}.userWantsToConnect == 1)
-                    [instrumentInstancesCellArray{1, i}, instrumentSessionsCellArray{1, i}] = instrumentInstancesCellArray{1, i}.Connect(instrumentInstancesCellArray{1, i}.connectionChannelOrTypeString);
-                    instrumentInstancesCellArray{1, i}.iSuccessfulConnection = 1;
+                    [instrumentInstancesCellArray{1, i}, instrumentSessionsCellArray{1, i}] = instrumentInstancesCellArray{1, i}.Connect(infoWindow, instrumentInstancesCellArray{1, i}.connectionChannelOrTypeString{:});
                 else
                     instrumentInstancesCellArray{1, i}.iSuccessfulConnection = 0;
                 end
