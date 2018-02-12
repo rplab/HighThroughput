@@ -52,6 +52,7 @@ classdef htASITigerConsole < htInstrument
         function [obj, asiSerialObj] = Connect(obj, infoWindow, comPort)
             
             if(obj.iSuccessfulConnection ~= 1)
+                
                 % Set the deviceID
                 obj.deviceComPort = comPort;
                 
@@ -70,6 +71,7 @@ classdef htASITigerConsole < htInstrument
                     else
                         obj.iSuccessfulConnection = -1;
                     end
+                    asiSerialObj = -1;
                 end
             else
                 htForm.PrintStringToWindow(infoWindow, '[htASITigerConsole] Tiger Console already successfully connected; skipping ''Connect'' command.');

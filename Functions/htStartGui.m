@@ -27,9 +27,10 @@ function htStartGui
 % 4: Name from "imaqhwinfo" of the Hamamatsu Orca Flash 4.0 camera. As of 12-4-17, 'hamamatsu'. I'm not sure how this changes if multiple cameras are connected.
 % 5: ComPort of the OptoElectronics AOTF. As of 12-4-17, Com19
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-instrumentConnections = {'HTDev1',                         'Com5',                            'Com25',                          'hamamatsu',                        'Com19'};
-instrumentNames =       {'DAQ: National Instruments 6343', 'Stage/Filter: ASI Tiger Console', 'Pump: KD Scientific Legato 111', 'Camera: Hamamatsu Orca Flash 4.0', 'AOTF: Optoelectronics AOTF'};
-instrumentClasses =     {'htDaq',                          'htASITigerConsole',               'htKDSPump',                      'htHamamatsu',                      'htAOTF'};
+instrumentNames =        {'DAQ: National Instruments 6343 HTDev1', 'Stage/Filter: ASI Tiger Console', 'Pump 1: KD Scientific Legato 111', 'Camera: Hamamatsu Orca Flash 4.0', 'AOTF: Optoelectronics AOTF'};
+instrumentClasses =      {'htDaq',                                 'htASITigerConsole',               'htKDSPump',                        'htHamamatsu',                      'htAOTF'};
+instrumentConnections =  {'HTDev1',                                'Com5',                            'Com25',                            'hamamatsu',                        'Com19'};
+instrumentSessionNames = {'niDaqSession',                          'asiSerialObj',                    'kdsPumpSerialObj',                 'hamamatsuCameraObj',               'aotfSerialObj'};
 
 %% Initialize variables
 % Initialize GUI variables
@@ -74,9 +75,9 @@ mainTitlePosition = [mainPanelInsetDistanceX + textSpacingBufferDX, heightGUI - 
 % rootDefaultPathDirectory = userpath; % Can't use this because apparently
 % this computer is messed up somehow
 rootDefaultPathDirectory = pwd;
-rootDefaultPathName = 'htMostRecentDefaultPath.mat';
+rootDefaultPathName = 'htStartGuiDefaultPath.mat';
 rootDefaultPathFileName = strcat(rootDefaultPathDirectory, filesep, rootDefaultPathName);
-defaultFileName = 'mostRecentHTSettings';
+defaultFileName = 'htStartGuiSettings';
 
 % Table variables
 rowDeltaY = 60 + 2*textSpacingBufferDY;
@@ -101,7 +102,7 @@ set(a, 'XTick',[], 'YTick',[]);
 set(gca, 'FontName', htStartGuiMainFont)
 
 % Obtain parameters, either by a previously made file or by defining them
-[settings, restartBool] = populateSettings(false);
+[htSettings, restartBool] = populateSettings(false);
 
 % If the file structure doesn't match this code's structure, restart
 if(restartBool)
@@ -111,7 +112,7 @@ if(restartBool)
 end
 
 % Initialize uicontrol handles
-numInstrs = size(settings.useInstruments, 2);
+numInstrs = size(htSettings.useInstruments, 2);
 useDAQConnectionControl = gobjects(1, numInstrs);
 
 % Create colored regions
@@ -134,7 +135,7 @@ for i=1:numInstrs
     
     % Create the lefthand labels for the ith instrument
     uicontrol('Parent', f, 'Style', 'text',...
-    'String', settings.instrumentNames{i},...
+    'String', htSettings.instrumentNames{i},...
     'FontName', htStartGuiMainFont,...
     'FontSize', htStartGuiFontSize,...
     'FontWeight', htStartGuiMainFontWeight,...
@@ -145,13 +146,13 @@ for i=1:numInstrs
     
     % Create the checkbox for the ith instrument
     uicontrol('Parent', f, 'Style', 'checkbox',...
-        'Value', settings.useInstruments(i),...
+        'Value', htSettings.useInstruments(i),...
         'backgroundcolor', mainRectangleColor,...
         'Position', [column2X + column2Width/2 - checkboxLength/2, row1Y - (i - 1)*rowDeltaY + checkboxYOffset - uiTitleTextHeight, checkboxLength, checkboxLength],...
         'Callback', {@useInstrumentCheckbox_Callback, i});
     
     % Determine if the user previously wanted to use the ith instrument
-    if(settings.useInstruments(i))
+    if(htSettings.useInstruments(i))
         enableStr = 'on';
     else
         enableStr = 'off';
@@ -160,7 +161,7 @@ for i=1:numInstrs
     % Determine the connection string for the ith instrument
     useDAQConnectionControl(i) = uicontrol('Parent', f,...
     'Style', 'edit',...
-    'String', settings.instrumentConnections{i},...
+    'String', htSettings.instrumentConnections{i},...
     'backgroundcolor', htStartGuiConnectionBGColor,...
     'foregroundcolor', htStartGuiConnectionFontColor,...
     'Enable', enableStr,...
@@ -196,7 +197,7 @@ for j=1:size(repeatString, 2)
     
     % Create input for the jth position
     uicontrol('Parent', f, 'Style', 'edit',...
-        'String', num2str(settings.positionGUI(j)),...
+        'String', num2str(htSettings.positionGUI(j)),...
         'FontName', htStartGuiMainFont,...
         'FontSize', guiSettingsFontSize,...
         'FontWeight', htStartGuiMainFontWeight,...
@@ -255,8 +256,8 @@ f.Visible = 'on';
     % Example: ... 'Callback', {@useInstrumentCheckbox_Callback, 6},...
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     function useInstrumentCheckbox_Callback(hObject, ~, i)
-        settings.useInstruments(i) = logical(get(hObject,'Value'));
-        if(~settings.useInstruments(i))
+        htSettings.useInstruments(i) = logical(get(hObject,'Value'));
+        if(~htSettings.useInstruments(i))
             useDAQConnectionControl(i).set('Enable', 'off');
         else
             useDAQConnectionControl(i).set('Enable', 'on', 'backgroundcolor', [1, 1, 1], 'foregroundcolor', [1, 1, 1]);
@@ -281,7 +282,7 @@ f.Visible = 'on';
     % Example: ... 'Callback', {@useDAQConnectionString_Callback, 6},...
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     function useDAQConnectionString_Callback(hObject, ~, i)
-        settings.instrumentConnections{i} = get(hObject,'String');
+        htSettings.instrumentConnections{i} = get(hObject,'String');
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -300,7 +301,7 @@ f.Visible = 'on';
     % Example: ... 'Callback', {@guiSettings_Callback, 6},...
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     function guiSettings_Callback(hObject, ~, j)
-        settings.positionGUI(j) = str2double(get(hObject,'String'));
+        htSettings.positionGUI(j) = str2double(get(hObject,'String'));
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -319,15 +320,15 @@ f.Visible = 'on';
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     function saveAsDefault_Callback(~, ~)
         try
-            defaultPath = settings.defaultPath;
-            defaultFileName = settings.defaultFileName;
+            defaultPath = htSettings.defaultPath;
+            defaultFileName = htSettings.defaultFileName;
             save(rootDefaultPathFileName, 'defaultPath', 'defaultFileName');
-            save(strcat(defaultPath, filesep, defaultFileName), 'settings');
+            save(strcat(defaultPath, filesep, defaultFileName), 'htSettings');
         catch ME1 %#ok
             waitfor(msgbox('The most recent settings were not saved correctly. Sorry but a new one will be made.', 'File unusable.', 'Error', 'error'));
-            [settings, restartBool] = populateSettings(true);
+            [htSettings, restartBool] = populateSettings(true);
             save(rootDefaultPathFileName, 'rootDefaultPathDirectory', 'rootDefaultPathFileName');
-            save(strcat(rootDefaultPathDirectory, filesep, defaultFileName), 'settings');
+            save(strcat(rootDefaultPathDirectory, filesep, defaultFileName), 'htSettings');
             close(f);
             htStartGui;
         end
@@ -349,7 +350,7 @@ f.Visible = 'on';
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     function start_Callback(~, ~)
         close(f);
-        htGui(settings);
+        htGui(htSettings);
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -440,7 +441,7 @@ f.Visible = 'on';
     %
     % Example: [settings, restartProgram] = populateSettings(true)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    function [settings, restartProgram] = populateSettings(forceNewSettings)
+    function [htSettings, restartProgram] = populateSettings(forceNewSettings)
         
         settingsLoadedCorrectlyBool = true;
         needToAskToReplace = false;
@@ -454,15 +455,15 @@ f.Visible = 'on';
                 defaultPath = defaultFileContents.defaultPath;
                 defaultFileName = defaultFileContents.defaultFileName;
                 defaultSettingsContents = load(strcat(defaultPath, filesep, defaultFileName));
-                settings = defaultSettingsContents.settings;
+                htSettings = defaultSettingsContents.htSettings;
                 
                 % Determine if the settings match characteristics of the current settings and if not allow user to restore default
-                numInstruments = size(settings.useInstruments, 2);
+                numInstruments = size(htSettings.useInstruments, 2);
                 if(size(instrumentConnections, 2) ~= numInstruments)
                     needToAskToReplace = true;
                 else
                     for ii=1:numInstruments
-                        if(~strcmp(settings.instrumentNames{ii}, instrumentNames{ii}))
+                        if(~strcmp(htSettings.instrumentNames{ii}, instrumentNames{ii}))
                             needToAskToReplace = true;
                         end
                     end
@@ -494,16 +495,17 @@ f.Visible = 'on';
             save(rootDefaultPathFileName, 'defaultPath', 'defaultFileName');
             
             % Create settings, save it
-            settings = [];
-            settings.positionGUI = [0, 95, 1280, 665];
-            settings.useInstruments = true(1,size(instrumentConnections,2));
-            settings.instrumentNames = instrumentNames;
-            settings.instrumentClasses = instrumentClasses;
-            settings.instrumentConnections = instrumentConnections;
-            settings.saveDirectoryAndName = strcat(defaultPath, filesep, defaultFileName);
-            settings.defaultPath = defaultPath;
-            settings.defaultFileName = defaultFileName;
-            save(strcat(defaultPath, filesep, defaultFileName), 'settings');
+            htSettings = [];
+            htSettings.positionGUI = [0, 95, 1280, 665];
+            htSettings.useInstruments = true(1,size(instrumentConnections,2));
+            htSettings.instrumentNames = instrumentNames;
+            htSettings.instrumentClasses = instrumentClasses;
+            htSettings.instrumentConnections = instrumentConnections;
+            htSettings.instrumentSessionNames = instrumentSessionNames;
+            htSettings.saveDirectoryAndName = strcat(defaultPath, filesep, defaultFileName);
+            htSettings.defaultPath = defaultPath;
+            htSettings.defaultFileName = defaultFileName;
+            save(strcat(defaultPath, filesep, defaultFileName), 'htSettings');
         end
     end
 

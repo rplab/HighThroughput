@@ -45,8 +45,8 @@ classdef htAOTF < htInstrument
             
             % Set the deviceID
             if(obj.iSuccessfulConnection ~= 1)
+            
                 obj.deviceComPort = comPort;
-                
                 aotfSerialObj = serial(comPort,'BaudRate',19200,'DataBits',8,'FlowControl','none','Parity','none','StopBits',1,'Terminator','CR'); % Device is listed in Device Manager as USB Serial Port
                 
                 try
@@ -62,6 +62,7 @@ classdef htAOTF < htInstrument
                     else
                         obj.iSuccessfulConnection = -1;
                     end
+                    aotfSerialObj = -1;
                 end
             else
                 htForm.PrintStringToWindow(infoWindow, '[htAOTF] AOTF already successfully connected; skipping ''Connect'' command.');

@@ -7,13 +7,12 @@
 %
 % Ideas: 
 %
-% To do: 
+% To do:
 %
 % Procedures to make: Switch AOTF/Filterwheel
 %                     Wait for fish trigger from camera
 %                     Position fish
 %                     Take movie
-%                     ReturnInstrumentIndex
 %                     InitializeDaqForStandardUse
 %                     ToggleValve1, ToggleValve2, ToggleLED
 %
@@ -22,14 +21,6 @@ classdef htRunProcedure < htForm
     
     properties
         
-    end
-    
-    properties (Access = protected)
-        uniqueNIDAQName = 'NI6343DAQ';
-        uniqueASIConsoleName = 'ASITigerConsole';
-        uniqueAOTFName = 'AAOptoElectronicAOTF';
-        uniqueKDScientificPumpName = 'KDScientificLegato111Pump';
-        uniqueHamamatsuName = 'HamamatsuOrcaFlash4.0';
     end
     
     methods
@@ -70,10 +61,24 @@ classdef htRunProcedure < htForm
             
         end
         
-%         function [obj, instrumentInstancesCellArray] = InitializeDAQForStandardHTUse(obj, instrumentInstancesCellArray, niDaqSession)
-%             instrumentInstancesCellArray{1, 1} = instrumentInstancesCellArray{1, 1}.InitializeDigitalChannels(niDaqSession, {'valve1', '1.1', true, 'valve2', '1.0', true, 'LEDIn', '1.2', false, 'LEDOut', '1.3', true});
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Function: InitializeDAQForStandardHTUse
+        %
+        % This method initializes the high throughput instruments in a way
+        %
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        function [obj, instrumentInstancesCellArray] = InitializeDAQForStandardHTUse(obj, infoWindow, htSettings, instrumentInstancesCellArray, niDaqSession)
+            index = htRunProcedure.ReturnInstrumentIndex(htSettings, niDaqSession);
+            instrumentInstancesCellArray{index} = instrumentInstancesCellArray{index}.InitializeDigitalChannels(infoWindow, niDaqSession, {'valve1', '1.1', true, 'valve2', '1.0', true, 'LEDIn', '1.2', false, 'LEDOut', '1.3', true});
+        end
+        
+%         function obj = CaptureCurrentImageAndDisplay(obj, b, htSettings, instrumentInstancesCellArray, hamamatsuCameraObj)
+%             index = htRunProcedure.ReturnInstrumentIndex(htSettings, hamamatsuCameraObj);
+%             currentFrame = instrumentInstancesCellArray{index}.triggerAndReturnImage(hamamatsuCameraObj);
+%             data = currentFrame(:,:,1);  % channel 1 only
+%             imshow(data, [], 'Parent', b)
 %         end
-%         
+        
 %         function [obj, instrumentInstancesCellArray] = ToggleValve1(obj, instrumentInstancesCellArray, niDaqSession)
 %             instrumentInstancesCellArray{1, 1} = instrumentInstancesCellArray{1, 1}.ToggleDigitalOutputChannelStates(niDaqSession, {'Valve1'});
 %         end
@@ -143,6 +148,34 @@ classdef htRunProcedure < htForm
     end
     
     methods(Static)
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Function: ReturnInstrumentIndex
+        %
+        % This method is used to obtain the index a particular instrument
+        % is located at in settings (and thus
+        % instrumentInstancesCellArray). This is particularly useful for
+        % procedures as they often require access to a variety of class
+        % instances, all of which are housed under a single cell array (the
+        % one I just mentioned).
+        %
+        % Inputs: settings - A large structure created at the start of
+        %           either htStartGui or htGui, containing a variety of
+        %           settings.
+        %         instrumentSession - The instrument session object you are
+        %           trying to find the corresponding index for in another
+        %           structure (e.g. instrumentInstancesCellArray).
+        % Outputs: index - An integer representing the index the instrument
+        %            is located at in the settings and other structures
+        %            (e.g. instrumentInstancesCellArray).
+        %
+        % Example: index = htRunProcedure.ReturnInstrumentIndex(settings, niDaqSession);
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        function index = ReturnInstrumentIndex(settings, instrumentSession)
+            correspondingInstrumentString = inputname(2);
+            indexBoolVector = strcmp(settings.instrumentSessionNames, correspondingInstrumentString);
+            index = find(indexBoolVector);
+        end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Function: DebugAddMultAndReturnBothStatic

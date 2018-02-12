@@ -5,7 +5,9 @@
 %
 % Ideas: Can you make a listbox only do something on double-click?
 %
-% To do: Remove ability to add procedures while program is running
+% To do: If you load a procedure stack with less entries than your current
+%          clicked position, the window becomes invisible.
+%        Remove ability to add procedures while program is running
 %        Delete button checks if inputs to further functions rely on its
 %          outputs. Same for reordering buttons.
 %        Make procedure reordering buttons and edit button work.
@@ -14,29 +16,30 @@
 %        Allow user to "eval" outputs too.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function htGui(settings)
+function htGui(htSettings)
 
 %% Create instances using the instrument names and classes in settings
 % If htGui is naively invoked, just autopopulate settings
 if(nargin ~= 1)
-    settings.positionGUI = [0, 95, 1280, 665];
-    settings.useInstruments = [false, false, false, false, false];
-    settings.instrumentNames =       {'DAQ: National Instruments 6343', 'Stage/Filter: ASI Tiger Console', 'Pump: KD Scientific Legato 111', 'Camera: Hamamatsu Orca Flash 4.0', 'AOTF: Optoelectronics AOTF'};
-    settings.instrumentClasses =     {'htDaq',                          'htASITigerConsole',               'htKDSPump',                      'htHamamatsu',                      'htAOTF'};
-    settings.instrumentConnections = {'HTDev1',                         'Com5',                            'Com25',                          'hamamatsu',                        'Com19'};
-    settings.saveDirectoryAndName = strcat(strcat('~', filesep, 'Documents', filesep, 'MATLAB'), filesep, 'mostRecentHTSettings');
-    settings.defaultPath = strcat('~', filesep, 'Documents', filesep, 'MATLAB');
-    settings.defaultFileName = 'mostRecentHTSettings';
+    htSettings.positionGUI = [0, 95, 1280, 665];
+    htSettings.useInstruments = [false, false, false, false, false];
+    htSettings.instrumentNames =        {'DAQ: National Instruments 6343 HTDev1', 'Stage/Filter: ASI Tiger Console', 'Pump 1: KD Scientific Legato 111', 'Camera: Hamamatsu Orca Flash 4.0', 'AOTF: Optoelectronics AOTF'};
+    htSettings.instrumentClasses =      {'htDaq',                                 'htASITigerConsole',               'htKDSPump',                        'htHamamatsu',                      'htAOTF'};
+    htSettings.instrumentConnections =  {'HTDev1',                                'Com5',                            'Com25',                            'hamamatsu',                        'Com19'};
+    htSettings.instrumentSessionNames = {'niDaqSession',                          'asiSerialObj',                    'kdsPumpSerialObj',                 'hamamatsuCameraObj',               'aotfSerialObj'};
+    htSettings.saveDirectoryAndName = strcat(strcat('~', filesep, 'Documents', filesep, 'MATLAB'), filesep, 'mostRecentHTSettings');
+    htSettings.defaultPath = strcat('~', filesep, 'Documents', filesep, 'MATLAB');
+    htSettings.defaultFileName = 'htStartGuiSettings';
 end
 
 % Instantiate procedure/instrument classes
 procedureInstance = htRunProcedure; % DO NOT CHANGE THIS NAME, it is called as a string later
-numInstruments = size(settings.instrumentClasses, 2);
+numInstruments = size(htSettings.instrumentClasses, 2);
 instrumentInstancesCellArray = cell(1,numInstruments); % DO NOT CHANGE THIS NAME, it is called as a string later
 for instantiatingIndex=1:numInstruments
-    instrumentInstancesCellArray{instantiatingIndex} = eval(settings.instrumentClasses{instantiatingIndex});
-    instrumentInstancesCellArray{instantiatingIndex}.userWantsToConnect = logical(settings.useInstruments(instantiatingIndex));
-    instrumentInstancesCellArray{instantiatingIndex}.connectionChannelOrTypeString = settings.instrumentConnections(instantiatingIndex);
+    instrumentInstancesCellArray{instantiatingIndex} = eval(htSettings.instrumentClasses{instantiatingIndex});
+    instrumentInstancesCellArray{instantiatingIndex}.userWantsToConnect = logical(htSettings.useInstruments(instantiatingIndex));
+    instrumentInstancesCellArray{instantiatingIndex}.connectionChannelOrTypeString = htSettings.instrumentConnections(instantiatingIndex);
 end
 
 % Initialize any variables you want access to here (even if defined below, use [])
@@ -47,11 +50,11 @@ infoWindow = [];
 obj = 'obj'; %#ok since this is a dummy variable to help automate the autofilling processes of the add procedure buttons
 currentLoopNumber = 1;
 instrumentSessionsCellArray = [];
-niDaqSession = [];
-asiSerialObj = [];
-kdsPumpSerialObj = [];
+niDaqSession = []; %#ok Make sure these match the settings.InstrumentSessionNames
+asiSerialObj = []; %#ok Make sure these match the settings.InstrumentSessionNames
+kdsPumpSerialObj = []; %#ok Make sure these match the settings.InstrumentSessionNames
 hamamatsuCameraObj = [];
-aotfSerialObj = [];
+aotfSerialObj = []; %#ok Make sure these match the settings.InstrumentSessionNames
 unusedVariable1 = []; %#ok This is for the user to store temporary information when running the program
 unusedVariable2 = []; %#ok This is for the user to store temporary information when running the program
 unusedVariable3 = []; %#ok This is for the user to store temporary information when running the program
@@ -62,9 +65,9 @@ curVariables = who; % Get a list of all the available variables created above th
 %% Initialize variables
         
 % Initialize procedure/instrument variables
-metaClassMenuChoices = settings.instrumentNames;
+metaClassMenuChoices = htSettings.instrumentNames;
 metaClassMenuChoices = ['Procedures', metaClassMenuChoices];
-metaClassNameCellArray = settings.instrumentClasses;
+metaClassNameCellArray = htSettings.instrumentClasses;
 metaClassNameCellArray = ['htRunProcedure', metaClassNameCellArray];
 procedureAndInstrumentSettings.finiteLoop = true;
 procedureAndInstrumentSettings.finiteLoopNum = 10;
@@ -73,12 +76,14 @@ procedureAndInstrumentSettings.finiteLoopNum = 10;
 toAddEndButtonControl = [];
 toAddLoopButtonControl = [];
 toAddStartButtonControl = [];
+runButtonControl = [];
 
 % Initialize GUI variables
 stopBool = false;
 pauseBool = false;
+previewBool = false;
 isRunning = false;
-positionGUI = settings.positionGUI;
+positionGUI = htSettings.positionGUI;
 widthGUI = positionGUI(3);
 heightGUI = positionGUI(4);
 colorGUIBackground = [0.9444, 0.9444, 0.9444];
@@ -168,15 +173,27 @@ finiteLoopCheckboxControl = [];
 loopNumControl = [];
 
 %% Create GUI
+
 % Create figure
 f = figure('Visible','off','Position', positionGUI);
 a = axes;
+aa = axes;
+
 % Stretch the axes over the whole figure.
 set(a, 'Position', [0, 0, 1, 1]);
+
 % Switch off autoscaling.
 set(a, 'Xlim', [0, widthGUI], 'YLim', [0, heightGUI]);
 set(a, 'XTick',[], 'YTick',[]);
-set(gca, 'FontName', htGuiMainFont)
+set(a, 'FontName', htGuiMainFont)
+
+% Stretch the axes over half(?) of the figure.
+procedureWindowPosition = [toAddProceduresPosition(1) - textSpacingBufferDX, textSpacingBufferDY/2, widthGUI - (toAddProceduresPosition(1) - textSpacingBufferDX/2), proceduresStartTextLabelPosition(2) + proceduresStartTextLabelPosition(4) + 2*textSpacingBufferDY + procedureButtonHeights + uiTitleTextHeight];
+cameraPreviewPosition = [textSpacingBufferDX/widthGUI, textSpacingBufferDY/heightGUI, (procedureWindowPosition(1) - 2*textSpacingBufferDX)/widthGUI, (procedureWindowPosition(1) - 2*textSpacingBufferDX)/heightGUI];
+set(aa, 'Position', cameraPreviewPosition); % X component empirically determined
+% Switch off autoscaling.
+set(aa, 'Xlim', [0, widthGUI], 'YLim', [0, heightGUI]);
+set(aa, 'XTick',[], 'YTick',[]);
 
 % Make figure visible
 f.Visible = 'on';
@@ -186,7 +203,6 @@ f.Visible = 'on';
 rectangle('Position', [0, 0, widthGUI, heightGUI], 'Curvature', 0, 'FaceColor', colorGUIBackground, 'Parent', a);
 
 % Procedure Window
-procedureWindowPosition = [toAddProceduresPosition(1) - textSpacingBufferDX, textSpacingBufferDY/2, widthGUI - (toAddProceduresPosition(1) - textSpacingBufferDX/2), proceduresStartTextLabelPosition(2) + proceduresStartTextLabelPosition(4) + 2*textSpacingBufferDY + procedureButtonHeights + uiTitleTextHeight];
 %rectangle('Position', procedureWindowPosition, 'Curvature', 0.025, 'FaceColor', colorGUIBackground, 'EdgeColor', colorWindowEdge, 'LineWidth', windowEdgeThickness, 'Parent', a);
 uicontrol('Parent',f,'Style','text',...
             'String','PROCEDURE WINDOW',...
@@ -205,8 +221,8 @@ generateExperimentButtonsPanel;
 
 % Populate with initial settings
 % Populate initial settings
-rootDefaultPathName = 'htMostRecentProcedureSettings.mat';
-defaultFilePathAndFile = strcat(settings.defaultPath, filesep, rootDefaultPathName);
+rootDefaultPathName = 'htGuiSettings.mat';
+defaultFilePathAndFile = strcat(htSettings.defaultPath, filesep, rootDefaultPathName);
 possibleFile = dir(defaultFilePathAndFile);
 if(~isempty(possibleFile))
     loadData(defaultFilePathAndFile);
@@ -220,21 +236,14 @@ end
 % Connect to instruments. This code isn't strictly necessary but is going
 % to make a lot of people's lives easier.
 [procedureInstance, instrumentInstancesCellArray, instrumentSessionsCellArray] = procedureInstance.ConnectInstruments(infoWindow, instrumentInstancesCellArray);
-if(instrumentInstancesCellArray{1}.userWantsToConnect)
-    niDaqSession = instrumentSessionsCellArray{1, 1};
-end
-if(instrumentInstancesCellArray{2}.userWantsToConnect)
-    asiSerialObj = instrumentSessionsCellArray{1, 2};
-end
-if(instrumentInstancesCellArray{3}.userWantsToConnect)
-    kdsPumpSerialObj = instrumentSessionsCellArray{1, 3};
-end
-if(instrumentInstancesCellArray{4}.userWantsToConnect)
-    hamamatsuCameraObj = instrumentSessionsCellArray{1, 4};
-end
-if(instrumentInstancesCellArray{5}.userWantsToConnect)
-    aotfSerialObj = instrumentSessionsCellArray{1, 5};
-end
+niDaqSession = instrumentSessionsCellArray{1, 1};
+asiSerialObj = instrumentSessionsCellArray{1, 2};
+kdsPumpSerialObj = instrumentSessionsCellArray{1, 3};
+hamamatsuCameraObj = instrumentSessionsCellArray{1, 4};
+aotfSerialObj = instrumentSessionsCellArray{1, 5};
+
+% Create instrument control buttons
+generateInstrumentControlButtons;
 
 %% Functions
 
@@ -762,7 +771,7 @@ end
                     if(strcmp(currentClassName, 'htRunProcedure'))
                         curInstanceName = 'procedureInstance';
                     else
-                        currentInstrumentIndex = find(strcmp(currentClassName, settings.instrumentClasses));
+                        currentInstrumentIndex = find(strcmp(currentClassName, htSettings.instrumentClasses));
                         curInstanceName = strcat('instrumentInstancesCellArray{', num2str(currentInstrumentIndex), '}');
                     end
                     inputString = strcat(curInstanceName, '.', currentMethodName, '(');
@@ -819,7 +828,7 @@ end
                         if(strcmp(currentClassName, 'htRunProcedure'))
                             procedureInstance = eval(inputString);
                         else
-                            whichInstrument = strcmp(currentClassName, settings.instrumentClasses);
+                            whichInstrument = strcmp(currentClassName, htSettings.instrumentClasses);
                             instrumentInstancesCellArray{whichInstrument} = eval(inputString);
                         end
                     else
@@ -827,7 +836,7 @@ end
                         if(strcmp(currentClassName, 'htRunProcedure'))
                             [procedureInstance, outputs{:}] = eval(inputString);
                         else
-                            whichInstrument = strcmp(currentClassName, settings.instrumentClasses);
+                            whichInstrument = strcmp(currentClassName, htSettings.instrumentClasses);
                             [instrumentInstancesCellArray{whichInstrument}, outputs{:}] = eval(inputString);
                         end
                     end
@@ -1333,6 +1342,63 @@ end
         end
         set(toRunProceduresEndListbox, 'backgroundcolor', [1, 1, 1]); % This is necessary because Matlab won't update the color otherwise
         set(toRunProceduresEndListbox, 'backgroundcolor', curBackgroundColor);
+    end
+
+    function generateInstrumentControlButtons
+        % instrumentInstancesCellArray
+        % niDaqSession = instrumentSessionsCellArray{1, 1};
+        % asiSerialObj = instrumentSessionsCellArray{1, 2};
+        % kdsPumpSerialObj = instrumentSessionsCellArray{1, 3};
+        % hamamatsuCameraObj = instrumentSessionsCellArray{1, 4};
+        % aotfSerialObj = instrumentSessionsCellArray{1, 5};
+        
+        % Initialize DAQ
+        [procedureInstance, instrumentInstancesCellArray] = procedureInstance.InitializeDAQForStandardHTUse(infoWindow, htSettings, instrumentInstancesCellArray, niDaqSession);
+        
+        % Trigger video to remove bad frame
+        firstFrame = instrumentInstancesCellArray{4}.triggerAndReturnImage(hamamatsuCameraObj); %#ok used to remove bad frame
+        
+        % Display current image
+        firstFrame = instrumentInstancesCellArray{4}.triggerAndReturnImage(hamamatsuCameraObj);
+        data = firstFrame(:,:,1);  % channel 1 only
+        imshow(data, [], 'Parent', aa)
+        
+        % Generate control variables
+        previewButtonPosition = [textSpacingBufferDX, cameraPreviewPosition(4)*heightGUI + 2*textSpacingBufferDY, pushButtonWidth, pushButtonHeight];
+        
+        % Generate controls
+        uicontrol('Parent', f, 'Style', 'togglebutton',...
+            'String','Preview',...
+            'FontSize', buttonFontSize,...
+            'backgroundcolor', closeButtonBGColor,...
+            'foregroundcolor', closeButtonFontColor,...
+            'Position',previewButtonPosition,...
+            'Callback',{@previewButton_Callback});
+        
+        % Callback functions
+        function previewButton_Callback(hObject, ~)
+            previewBool = ~previewBool;
+            if(previewBool)
+                set(hObject, 'String', 'Stop Preview');
+                set(runButtonControl, 'Enable', 'off');
+                htForm.PrintStringToWindow(infoWindow, 'Previewing camera.');
+            else
+                set(hObject, 'String', 'Preview');
+                if(~isRunning)
+                    set(runButtonControl, 'Enable', 'on');
+                end
+                htForm.PrintStringToWindow(infoWindow, 'Preview off.');
+            end
+            
+            while( previewBool )
+                
+                currentFrame = instrumentInstancesCellArray{4}.triggerAndReturnImage(hamamatsuCameraObj);
+                data = currentFrame(:,:,1);  % channel 1 only
+                imshow(data, [], 'Parent', aa)
+                
+            end
+        end
+        
     end
 
 end

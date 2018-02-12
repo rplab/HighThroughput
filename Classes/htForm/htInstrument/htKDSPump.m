@@ -45,6 +45,7 @@ classdef htKDSPump < htInstrument
         function [obj, kdsPumpSerialObj] = Connect(obj, infoWindow, comPort)
             
             if(obj.iSuccessfulConnection ~= 1)
+                
                 % Set the deviceID
                 obj.deviceComPort = comPort;
                 
@@ -67,6 +68,7 @@ classdef htKDSPump < htInstrument
                     else
                         obj.iSuccessfulConnection = -1;
                     end
+                    kdsPumpSerialObj = -1;
                 end
             else
                 htForm.PrintStringToWindow(infoWindow, '[htKDSPump] KDS pump already successfully connected; skipping ''Connect'' command.');

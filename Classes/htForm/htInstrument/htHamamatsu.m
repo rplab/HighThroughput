@@ -43,12 +43,15 @@ classdef htHamamatsu < htInstrument
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function [obj, hamamatsuCameraObj] = Connect(obj, infoWindow, cameraName)
             
+            imaqreset;
+            
             if(obj.iSuccessfulConnection ~= 1)
+                
                 try
                     
                     % Establish connections
                     hwInfo = imaqhwinfo(cameraName);
-                    hamamatsuCameraObj = videoinput(hwInfo.AdaptorName,1,hamVidObjMode); % Fastest setting with 4x4 binning
+                    hamamatsuCameraObj = videoinput(hwInfo.AdaptorName,1,'MONO16_BIN2x2_1024x1024_FastMode'); % Fastest setting with 4x4 binning
                     vid_src = getselectedsource(hamamatsuCameraObj);
                     
                     % Set settings
@@ -56,10 +59,13 @@ classdef htHamamatsu < htInstrument
                     set(hamamatsuCameraObj, 'FrameGrabInterval', 1);    % Grab every frame
                     set(hamamatsuCameraObj, 'FramesPerTrigger', 1);   % Grab one frame per trigger
                     set(hamamatsuCameraObj,'TriggerRepeat',Inf);     % Allow infinitely many triggers
-                    set(vid_src, 'ExposureTime', camExposure); % Exposure time
+                    set(vid_src, 'ExposureTime', 0.2); % Exposure time, unknown units, though related to seconds.
                     
                     % Start video object
-                    start(hamamatsuCameraObj)
+                    start(hamamatsuCameraObj);
+                    
+                    htForm.PrintStringToWindow(infoWindow, '[htHamamatsu] Camera successfully connected.');
+                    obj.iSuccessfulConnection = 1;
                     
                 catch ME1 %#ok Leave this comment to keep the warning about not using the variable from popping up
                     htForm.PrintStringToWindow(infoWindow, 'Warning: [htHamamatsu] No Hamamatsu camera found; aborting connection attempt.');
@@ -69,6 +75,7 @@ classdef htHamamatsu < htInstrument
                     else
                         obj.iSuccessfulConnection = -1;
                     end
+                    hamamatsuCameraObj = -1;
                 end
             else
                 htForm.PrintStringToWindow(infoWindow, '[htHamamatsu] Hamamatsu already successfully connected; skipping ''Connect'' command.');
@@ -94,9 +101,11 @@ classdef htHamamatsu < htInstrument
             
             % Be sure not to print to the info window as this function may
             % be called often
-            if(obj.iSuccessfulConnection ~= 1)
+            if(obj.iSuccessfulConnection == 1)
                 trigger(hamamatsuCameraObj)
                 imageToReturn = getdata(hamamatsuCameraObj,1);
+            else
+                imageToReturn = -1;
             end
             
         end
@@ -122,7 +131,7 @@ classdef htHamamatsu < htInstrument
             
             % Be sure not to print to the info window as this function may
             % be called often
-            if(obj.iSuccessfulConnection ~= 1)
+            if(obj.iSuccessfulConnection == 1)
                 trigger(hamamatsuCameraObj)
                 imageToReturn = getdata(hamamatsuCameraObj,1);
                 imwrite(imageToReturn, saveNameWithFilePath);
