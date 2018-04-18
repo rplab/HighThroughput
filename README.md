@@ -6,7 +6,7 @@ Overview of the classes for the high-throughput API developed for the Parthasara
 
 ## Inheritance Tree and Method Overview
 
-All classes are extended from the 'form' class.
+All classes are extended from the 'htForm' class.
 
 - **htForm**
   - (Static) PrintStringToWindow
@@ -178,7 +178,129 @@ All classes are extended from the 'form' class.
 
 ### Properties
 
+- **string deviceComPort**: This variable is set automatically with the function connect(). String which matches the virtual com port with which the ASI stage is identified.
+
+  ```Example: asiStage.deviceComPort = 'Com5';```
+  
+- **double stageScalingFactorX**: Sometimes the stage movement distance is off from the input movement distance by a constant factor. This fixes that in the X direction; Default 4.0
+
+  ```Example: asiStage.stageScalingFactorX = 4.0```
+  
+- **double stageScalingFactorY**: Sometimes the stage movement distance is off from the input movement distance by a constant factor. This fixes that in the Y direction; Default 4.0
+
+  ```Example: asiStage.stageScalingFactorY = 4.0```
+  
+- **double stageScalingFactorZ**: Sometimes the stage movement distance is off from the input movement distance by a constant factor. This fixes that in the Z direction; Default 2.5
+
+  ```Example: asiStage.stageScalingFactorZ = 4.0```
+  
+- **string maximumStageSpeed**: String of the maximum stage speed in units of mm/s; Default '7.5'
+
+  ```Example: asiStage.maximumStageSpeed = '7.5'```
+  
+- **double[] stageCenterXY**: Double vector set by the user in the GUI to represent the center of the capillary. This value is assumed to have already been corrected via stageScalingFactorX,Y
+
+  ```Example: asiStage.stageCenterXY = [0.0, 0.0]```
+  
+- **double[] stageInitAndFinalZ**: Double vector set by the user in the GUI to represent the initial and final z for light-sheet scans. This value is assumed to have already been corrected via stageScalingFactorZ
+
+  ```Example: asiStage.stageInitAndFinalZ = [0.0, 1.0]```
+  
+- **double stageCenterZ**: Double representing the center of the capillary, set automatically when the zebrafish search is started. This value is assumed to have already been corrected via stageScalingFactorZ
+
+  ```Example: asiStage.stageCenterZ = 0.5```
+  
+- **string defaultFilterWheelPosition**: String indicating default filter wheel position; Default 'MP 0'
+
+  ```Example: asiStage.defaultFilterWheelPosition = 'MP 0'```
+
 ### Methods
+
+- **[obj, asiSerialObj] = Connect(obj, infoWindow, comPort)**: This method connects the computer with the ASI console for a given com port.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **string comPort**: A string which matches the virtual com port assigned to the device by windows.
+  - **[session] asiSerialObj**: The ASI stage session acquired from the connect method.
+  
+  ```Example: [asiConsole, asiSerialObj] = asiConsole.Connect(infoWindow, 'Com5');```
+  
+- **[obj, positionVector] = QueryStagePosition(obj, infoWindow, asiSerialObj)**: This method returns the current position of the stage in units of microns, rescaling mismatches between where the stage is in real space vs. where the stage thinks it is.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] asiSerialObj**: The ASI stage session acquired from the connect method.
+  - **double[] positionVector**: A 3-vector returning the x, y, and z position of the stage in microns.
+  
+  ```Example: [asiConsole, positionVector] = asiConsole.QueryStagePosition(infoWindow, asiSerialObj);```
+  
+- **obj = RelativeMoveStage(obj, infoWindow, asiSerialObj, moveAxis, moveAmountMicrons, maxSpeed1True0False)**: This method moves the stage from its current position in the moveAxis by moveAmountMicrons in units of microns, rescaling mismatches between where the stage is in real space vs. where the stage thinks it is.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] asiSerialObj**: The ASI stage session acquired from the connect method.
+  - **char moveAxis**: Char of the axis name.
+  - **double moveAmountMicrons**: Double of the amount to move in microns.
+  - **int maxSpeed1True0False**: Int for moving at the maximum speed. Uses current speed if 0.
+  
+  ```Example: asiConsole = asiConsole.RelativeMoveStage(infoWindow, asiSerialObj, 'X', 1000.0, 1);```
+  
+- **obj = MoveStage(obj, infoWindow, asiSerialObj, moveAxis, movePositionMicrons, maxSpeed1True0False)**: This method moves the stage in the moveAxis by moveAmountMicrons in global coordinates relative to (0,0) in units of microns, rescaling mismatches between where the stage is in real space vs. where the stage thinks it is.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] asiSerialObj**: The ASI stage session acquired from the connect method.
+  - **char moveAxis**: Char of the axis name.
+  - **double movePositionMicrons**: Double of the amount to move in microns.
+  - **int maxSpeed1True0False**: Int for moving at the maximum speed. Uses current speed if 0.
+  
+  ```Example: asiConsole = asiConsole.MoveStage(infoWindow, asiSerialObj, 'X', 1452.2, 1);```
+  
+- **obj = SetSpeed(obj, infoWindow, asiSerialObj, moveAxis, speedUnitsOfMMPerSec)**: This function sets the default speed to move the stage when calling other move commands.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] asiSerialObj**: The ASI stage session acquired from the connect method.
+  - **char moveAxis**: Char of the axis name.
+  - **double speedUnitsOfMMPerSec**: The speed of the stage in units of millimeters per second.
+  
+  ```Example: asiConsole = asiConsole.SetSpeed(infoWindow, asiSerialObj, 'X', 7.5);```
+  
+- **obj = SwitchFilterWheelToEmpty(obj, infoWindow, asiSerialObj)**: This method flips the filterwheel to its default state, assumed to be an empty filter.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] asiSerialObj**: The ASI stage session acquired from the connect method.
+  
+  ```Example: asiConsole = asiConsole.SwitchFilterWheelToEmpty(infoWindow, asiSerialObj);```
+  
+- **obj = SwitchFilterWheelToGFP(obj, infoWindow, asiSerialObj)**: This method flips the filterwheel to its GFP state, assumed to be 'MP 1'.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] asiSerialObj**: The ASI stage session acquired from the connect method.
+  
+  ```Example: asiConsole = asiConsole.SwitchFilterWheelToGFP(infoWindow, asiSerialObj);```
+  
+- **obj = SwitchFilterWheelToRFP(obj, infoWindow, asiSerialObj)**: This method flips the filterwheel to its RFP state, assumed to be 'MP 2'.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] asiSerialObj**: The ASI stage session acquired from the connect method.
+  
+  ```Example: asiConsole = asiConsole.SwitchFilterWheelToRFP(infoWindow, asiSerialObj);```
+  
+- **Disconnect(obj, infoWindow, asiSerialObj)**: This method disconnects the computer from the stage.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] asiSerialObj**: The ASI stage session acquired from the connect method.
+  
+  ```Example: asiConsole.Disconnect(infoWindow, asiSerialObj);```
+  
+### Methods (Static)
+  
+- **WaitForStageToFinish(asiSerialObj)**: Method which does not return until the stage confirms it is finished moving. This is a latent function.
+  - **asiSerialObj**: The ASI console object used to communicate with the actual console via Matlab's serial api.
+  
+  ```Example: htASITigerConsole.waitForStageToFinish(asiSerialObj);```
+  
+- **micronNum = ReturnNumberFromStageResult(returnedString)**: This method takes a string returned from the stage (e.g. 'A: -1023') in units of tenths of microns and returns number representative of that string in units of microns.
+  - **returnedString**: The string returned from the ASI console object, possibly with non-numeric characters, in units of tenths of microns.
+  - **micronNum**: A double representation of the numeric part of returnedString changed into units of microns.
+  
+  ```Example: micronNum = htASITigerConsole.returnNumberFromStageResult(':A -1024');```
 
 ---
 
