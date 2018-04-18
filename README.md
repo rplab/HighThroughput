@@ -81,18 +81,18 @@ All classes are extended from the 'htForm' class.
   - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
   - **string stringToPrintToWindow**: A string containing whatever message you want to add to the infoWindow. This also appears to work with the literals stored in variables.
   
-  ```htForm.PrintStringToWindow(infowWindow, 'If possible, please refrain from swearing in the infoWindow.');```
+  ```Example: htForm.PrintStringToWindow(infowWindow, 'If possible, please refrain from swearing in the infoWindow.');```
   
 - **Pause(infoWindow, pauseTimeMilliseconds)**: This method pauses for a given number of milliseconds. Note that this function is latent and will not return until it is done pausing.
   - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
   - **double pauseTimeMilliseconds**: A double representing the pause time in units of milliseconds.
   
-  ```htForm.Pause(infowWindow, 10000);```
+  ```Example: htForm.Pause(infowWindow, 10000);```
   
 - **PrintTimestampToWindow(infoWindow)**: This method prints the current time to the infoWindow.
   - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
   
-  ```htForm.PrintTimestampToWindow(infowWindow);```
+  ```Example: htForm.PrintTimestampToWindow(infowWindow);```
 
 ---
 
