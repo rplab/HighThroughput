@@ -378,25 +378,121 @@ All classes are extended from the 'htForm' class.
 
 ### Methods
 
+- **[obj, hamamatsuCameraObj] = Connect(obj, infoWindow, cameraName)**: This method connects the computer with the camera, presumed in this case to be the Hamamatsu, though any DCAM compatible camera with the same settings should work (this is not true for many other brands I think).
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **string cameraName**: A string which matches the name of the device available in Matlab's IMAQ configuration.
+  - **[session] hamamatsuCameraObj**: The created camera object which is used to control the camera.
+  
+  ```Example: [hamamatsu, hamamatsuCameraObj] = hamamatsu.Connect(infoWindow, 'hamamatsu');```
+  
+- **imageToReturn = triggerAndReturnImage(obj, hamamatsuCameraObj)**: This method triggers the Hamamatsu camera for an image then returns that image.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[session] hamamatsuCameraObj**: The created camera object which is used to control the camera.
+  - **double[] imageToReturn**: The image obtained from the camera. NxMx3, where the last index is the RGB channel.
+  
+  ```Example: imageToReturn = hamamatsu.triggerAndReturnImage(hamamatsuCameraObj);```
+  
+- **imageToReturn = triggerAndSaveAndReturnImage(obj, hamamatsuCameraObj, saveNameWithFilePath)**: This method triggers the Hamamatsu camera for an image, saves the image to a specified filename and filepath, then returns the image.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[session] hamamatsuCameraObj**: The created camera object which is used to control the camera.
+  - **string saveNameWithFilePath**: A string containing the complete filename and filepath to save the image to.
+  - **double[] imageToReturn**: The image obtained from the camera. NxMx3, where the last index is the RGB channel.
+  
+  ```Example: imageToReturn = hamamatsu.triggerAndSaveAndReturnImage(hamamatsuCameraObj, 'C:\IProbablyShouldntSaveDirectlyInTheCDir.tif');```
+  
+- **Disconnect(obj, infoWindow, hamamatsuCameraObj)**: This method disconnects the computer from the Hamamatsu camera.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] hamamatsuCameraObj**: The camera object which is used to control the camera.
+  
+  ```Example: hamamatsu.Disconnect(infoWindow, hamamatsuCameraObj);```
+
 ---
 
 ## htKDSPump
 
 ### Properties
 
+- **deviceComPort**: This variable is set automatically with the function connect(). String which matches the virtual com port with which the pump is identified.
+
+  ```Example: kdsPump.deviceComPort = 'Com5';```
+  
+- **diameterSetString**: String defining the diameter of the syringe; Default 'diameter 14.43'.
+
+  ```Example: kdsPump.diameterSetString = 'diameter 14.43';```
+  
+- **maxVolumeSetString**: String defining the volume of the syringe; Default 'svolume 10 ml'.
+
+  ```Example: kdsPump.maxVolumeSetString = 'svolume 10 ml';```
+  
+- **infuseRateSetString**: String defining the infusion rate; Default 'irate 3.0 ml/min'.
+
+  ```Example: kdsPump.infuseRateSetString = 'irate 3.0 ml/min';```
+  
+- **withdrawRateSetString**: String defining the withdrawal rate; Default 'wrate 1 ml/min'.
+
+  ```Example: kdsPump.withdrawRateSetString = 'wrate 1 ml/min';```
+
 ### Methods
 
----
-
-## htRunProcedures
-
-Currently in progress
-
-- **function**: Description
-  - **variable**: Description
+- **[obj, kdsPumpSerialObj] = Connect(obj, infoWindow, comPort)**: This method connects the computer with the pump for a given com port.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **string comPort**: A string which matches the virtual com port assigned to the device by windows.
+  - **[session] kdsPumpSerialObj**: The camera object which is used to control the pump.
   
-  ```Example: Words```
+  ```Example: [kdsPump, kdsPumpSerialObj] = kdsPump.Connect(infoWindow, 'Com19');```
   
-- **variable**: Description
-
-  ```Example: Text```
+- **obj = SetWithdrawRate(obj, infoWindow, kdsPumpSerialObj, rateNumber, rateUnits)**: This method sets the withdraw rate for the pump. Be careful with your syntax as the units need to match the pump's list of acceptable units.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] kdsPumpSerialObj**: The camera object which is used to control the pump.
+  - **double rateNumber**: A double or float which represents the withdraw rate in units specified in the next variable.
+  - **string rateUnits**: A string containing the units to use. Must match the units available with the pump.
+  
+  ```Example: kdsPump = kdsPump.SetWithdrawRate(infoWindow, kdsPumpSerialObj, 1, 'ml/min');```
+  
+- **obj = BeginWithdrawing(obj, infoWindow, kdsPumpSerialObj)**: This method tells the pump to begin withdrawing with its current parameters.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] kdsPumpSerialObj**: The camera object which is used to control the pump.
+  
+  ```Example: kdsPump = kdsPump.BeginWithdrawing(infoWindow, kdsPumpSerialObj);```
+  
+- **obj = SetInfuseRate(obj, infoWindow, kdsPumpSerialObj, rateNumber, rateUnits)**: This method sets the infuse rate for the pump. Be careful with your syntax as the units need to match the pump's list of acceptable units. 
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] kdsPumpSerialObj**: The camera object which is used to control the pump.
+  - **double rateNumber**: A double or float which represents the withdraw rate in units specified in the next variable.
+  - **string rateUnits**: A string containing the units to use. Must match the units available with the pump.
+  
+  ```Example: kdsPump = kdsPump.SetInfuseRate(infoWindow, kdsPumpSerialObj, 1.0, 'ml/min');```
+  
+- **obj = BeginInfusing(obj, infoWindow, kdsPumpSerialObj)**: This method tells the pump to begin infusing with its current parameters.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] kdsPumpSerialObj**: The camera object which is used to control the pump.
+  
+  ```Example: kdsPump = kdsPump.BeginInfusing(infoWindow, kdsPumpSerialObj);```
+  
+- **obj = StopInfusingAndOrWithdrawing(obj, infoWindow, kdsPumpSerialObj)**: This method tells the pump to stop any motion.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] kdsPumpSerialObj**: The camera object which is used to control the pump.
+  
+  ```Example: kdsPump = kdsPump.StopInfusingAndOrWithdrawing(infoWindow, kdsPumpSerialObj);```
+  
+- **obj = UpdatePumpParameters(obj, infoWindow, kdsPumpSerialObj)**: This method updates the parameters currently used by the pump. The updated parameters are the syringe diameter, the maximum volume, the infusion rate, and the withdraw rate. Note that the order these parameters are set matters!
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] kdsPumpSerialObj**: The camera object which is used to control the pump.
+  
+  ```Example: kdsPump = kdsPump.UpdatePumpParameters(infoWindow, kdsPumpSerialObj);```
+  
+- **Disconnect(obj, infoWindow, kdsPumpSerialObj)**: This method disconnects the computer from the pump.
+  - **[instance] obj**: The instance of the class. This argument is suppressed if called FROM the instance.
+  - **[handle] infoWindow**: A handle to the information window. Used to relay information to the user.
+  - **[session] kdsPumpSerialObj**: The camera object which is used to control the pump.
+  
+  ```Example: kdsPump.Disconnect(infoWindow, kdsPumpSerialObj);```
