@@ -7,3 +7,5 @@ put spim.bat on desktop, s shortcut quick launch to:
 
 later that day spim.bat replaced with spimA.bat, place on destop,
 spimA.bat changesto C:\SPIMcode and launches spimControls.py!
+
+python script needs PyDAQmx module to run and communicate with NiDaq on dedicated PCI card.
